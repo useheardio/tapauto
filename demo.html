@@ -213,8 +213,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   #app{margin:24px auto;min-height:auto;height:780px;max-height:calc(100vh - 48px);border-radius:42px;border:1px solid var(--on-line);box-shadow:0 50px 100px -40px rgba(0,0,0,.6)}
   body:has(#app.hidden){background:var(--bg)}
   body:not(:has(#app.hidden)){background:#08080a}
-  .sheet{border-radius:24px;bottom:auto;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);max-width:380px;border:1px solid var(--on-line)}
-  .sheet.show{transform:translate(-50%,-50%)}
+  .sheet{border-radius:24px;bottom:auto;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);max-width:380px;max-height:calc(100vh - 80px);overflow-y:auto;border:1px solid var(--on-line);opacity:0;pointer-events:none}
+  .sheet.show{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
   .sheet-bg.show{}
 }
 @media(max-width:760px){.board{grid-template-columns:1fr}.an-grid,.rec-grid{grid-template-columns:repeat(2,1fr)}}
@@ -627,6 +627,7 @@ function route(){
   document.getElementById("app").classList.toggle("hidden",isShop);
   document.getElementById("shop").classList.toggle("on",isShop);
   document.querySelector('meta[name=theme-color]').setAttribute("content",isShop?"#F4F2EC":"#0b0b0e");
+  closeSheet();
 }
 window.addEventListener("hashchange",route);
 
