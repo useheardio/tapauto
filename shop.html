@@ -181,6 +181,11 @@ input{font-family:inherit}
 .summary{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:4px 18px;box-shadow:var(--shadow);margin-top:16px}
 .srow{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--line);font-size:.9rem}.srow:last-child{border-bottom:none}.srow .k{color:var(--muted)}.srow .v{font-weight:600;text-align:right}.srow .v.url{font-family:"Space Mono",monospace;font-size:.7rem;color:var(--accent);word-break:break-all}
 .center{text-align:center}
+.msteps{margin-top:20px;display:flex;flex-direction:column;gap:14px}
+.mstep{display:flex;align-items:flex-start;gap:13px;font-size:.92rem;color:var(--muted)}
+.mstep b{color:var(--text)}
+.mstep .n{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--accent-tint);color:var(--accent-deep);display:grid;place-items:center;font-family:"Sora";font-weight:700;font-size:.82rem}
+#manual-url{font-size:.82rem}
 </style>
 </head>
 <body>
@@ -357,10 +362,10 @@ input{font-family:inherit}
       <div class="sstat" id="scan-status">Searching for a tag</div>
       <div class="shint" id="scan-hint">Touch the tag to the back of your phone, near the top.</div>
       <div class="spacer"></div>
-      <button class="cta ghost" onclick="simulateScan()">Simulate a tag (no NFC here)</button>
+      <button class="cta ghost" id="sim-scan" onclick="simulateScan()">Simulate a tag (no NFC here)</button>
     </div>
     <div class="fscreen" data-f="details">
-      <button class="back" onclick="fgo('scan')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>Back</button>
+      <button class="back" onclick="detailsBack()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>Back</button>
       <span class="kicker">Tag <span id="det-tag" class="mono">read</span></span>
       <h1 class="h">Whose car is this?</h1>
       <div class="field"><label>Plate or VIN</label><input id="in-plate" placeholder="KRT-4471" /></div>
@@ -390,7 +395,22 @@ input{font-family:inherit}
       <div class="sstat" id="write-status">Hold the same tag to your phone</div>
       <div class="shint">This binds the tag to the car. One tap.</div>
       <div class="spacer"></div>
-      <button class="cta ghost" onclick="simulateWrite()">Simulate write (no NFC here)</button>
+      <button class="cta ghost" id="sim-write" onclick="simulateWrite()">Simulate write (no NFC here)</button>
+    </div>
+    <div class="fscreen" data-f="manual">
+      <button class="back" onclick="fgo('mileage')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>Back</button>
+      <span class="kicker">Write the tag</span>
+      <h1 class="h">Write this to your tag</h1>
+      <p class="sub" id="manual-status">Saving to your database...</p>
+      <div class="field"><label>Tag URL</label><input id="manual-url" class="mono" readonly /></div>
+      <button class="cta ghost" onclick="copyManual(this)" style="margin-top:10px">Copy URL</button>
+      <div class="msteps">
+        <div class="mstep"><span class="n">1</span><span>Open the free <b>NFC Tools</b> app on your iPhone (App Store).</span></div>
+        <div class="mstep"><span class="n">2</span><span>Tap <b>Write</b>, then <b>Add a record</b>, then <b>URL/URI</b>, and paste the link above.</span></div>
+        <div class="mstep"><span class="n">3</span><span>Tap <b>Write</b> and hold the tag to the top of your iPhone until it confirms.</span></div>
+      </div>
+      <div class="spacer"></div>
+      <button class="cta" id="manual-cont" onclick="finishManual()">I have written the tag</button>
     </div>
     <div class="fscreen" data-f="done">
       <div class="spacer"></div>
@@ -646,11 +666,17 @@ function renderBuckets(){
 function sendBucket(i){ toast(BUCKETS[i].done); }
 
 /* ---------- flows ---------- */
+function genToken(){ return (Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,6)); }
 function startFlow(m){
   mode=m; cap={tag:"",plate:"",name:"",phone:"",oil:"0W-20 Syn",svc:"Oil change",miles:""};
+  el("flow").classList.add("on");
+  if(m==="new" && !nfcOK){ // no Web NFC: generate the token here, write it later with NFC Tools
+    cap.tag=genToken(); el("det-tag").textContent=cap.tag; buildChips(); fgo("details"); return;
+  }
   el("scan-title").textContent=(m==="new")?"Hold the new tag to your phone":"Tap the car's tag";
-  el("flow").classList.add("on"); fgo("scan"); resetScanner(); beginScan();
+  fgo("scan"); resetScanner(); beginScan();
 }
+function detailsBack(){ if(nfcOK) fgo("scan"); else closeFlow(); }
 function closeFlow(){ el("flow").classList.remove("on"); }
 function fgo(s){ document.querySelectorAll(".fscreen").forEach(function(x){x.classList.toggle("on",x.dataset.f===s);}); }
 function buildChips(){
@@ -661,9 +687,9 @@ function buildChips(){
 }
 function resetScanner(){ el("scanner").classList.remove("found"); el("scan-status").textContent="Searching for a tag"; el("scan-hint").style.display=""; }
 async function beginScan(){
-  if(!nfcOK) return;
-  try{ var n=new NDEFReader(); await n.scan(); n.onreading=function(e){ onTagRead(e.serialNumber||("tag-"+Date.now())); }; }
-  catch(err){ el("scan-status").textContent="Tap to allow NFC, then scan"; el("scan-hint").textContent="Your browser needs permission to use NFC."; }
+  if(!nfcOK){ el("scan-status").textContent="This device can't read tags"; el("scan-hint").innerHTML="Real NFC works in <b>Chrome on an Android phone</b>. Open this page there to tap an actual tag."; return; }
+  try{ var n=new NDEFReader(); await n.scan(); el("scan-status").textContent="Ready. Hold the tag to your phone"; n.onreading=function(e){ onTagRead(e.serialNumber||("tag-"+Date.now())); }; }
+  catch(err){ el("scan-status").textContent="Tap to allow NFC, then scan"; el("scan-hint").textContent="Your browser needs permission to use NFC. Tap anywhere and allow it."; }
 }
 function simulateScan(){ onTagRead("04:A2:39:"+Math.floor(Math.random()*900+100)); }
 function onTagRead(serial){
@@ -692,13 +718,42 @@ function renderOdo(){
 }
 function afterMileage(){
   if(!cap.miles){ toast("Enter the odometer reading"); return; }
-  if(mode==="new"){ fgo("write"); el("scanner2").classList.remove("found"); el("write-status").textContent="Hold the same tag to your phone"; beginWrite(); }
-  else { finishLog(); }
+  if(mode==="new"){
+    if(nfcOK){ fgo("write"); el("scanner2").classList.remove("found"); el("write-status").textContent="Hold the same tag to your phone"; beginWrite(); }
+    else { startManualWrite(); }
+  } else { finishLog(); }
+}
+var savedVid=null;
+async function startManualWrite(){
+  fgo("manual"); savedVid=null;
+  el("manual-url").value=DEMO_URL+"?t="+cap.tag;
+  el("manual-cont").disabled=true;
+  if(window.SHOP_ID&&supaClient){
+    el("manual-status").textContent="Saving to your database...";
+    var r=await saveAssignment();
+    if(r.ok){ savedVid=r.vid; el("manual-status").textContent="Saved to your database. Now write this URL to the tag."; }
+    else { el("manual-status").textContent="Save failed: "+(r.error||"")+". You can still copy the URL."; }
+  } else {
+    el("manual-status").textContent="Not signed into a shop, so nothing was saved. Sign in to save the car.";
+  }
+  el("manual-cont").disabled=false;
+}
+function copyManual(btn){
+  var inp=el("manual-url"), done=function(){ btn.textContent="Copied"; setTimeout(function(){btn.textContent="Copy URL";},1600); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(inp.value).then(done,function(){ legacyCopy(inp,done); }); }
+  else { legacyCopy(inp,done); }
+}
+function legacyCopy(inp,done){ try{ inp.removeAttribute("readonly"); inp.select(); inp.setSelectionRange(0,9999); document.execCommand("copy"); inp.setAttribute("readonly","readonly"); done(); }catch(e){ toast("Select the URL and copy it"); } }
+function finishManual(){
+  el("done-title").textContent="Tag ready"; el("done-sub").textContent=savedVid?"Saved. Once you write the tag, it goes live.":"Once you write the tag, it goes live.";
+  doneSummary(); el("done-again").textContent="Assign another"; fgo("done");
+  if(savedVid){ addLive(savedVid); }
+  toast("Tag ready · "+cap.name);
 }
 async function beginWrite(){
-  if(!nfcOK) return;
+  if(!nfcOK){ el("write-status").textContent="This device can't write tags"; return; }
   try{ var w=new NDEFReader(); await w.write({records:[{recordType:"url",data:DEMO_URL+"?t="+encodeURIComponent(cap.tag)}]}); onWritten(); }
-  catch(err){ el("write-status").textContent="Write failed, hold the tag steady and retry"; }
+  catch(err){ el("write-status").textContent="Write failed. Hold the tag flat against the phone and retry"; }
 }
 function simulateWrite(){ onWritten(); }
 function onWritten(){
@@ -726,23 +781,22 @@ async function saveAssignment(){
     return {ok:true,token:cap.tag,vid:veh.data.id,cid:cust.data.id};
   }catch(e){ return {ok:false,error:String(e&&e.message?e.message:e)}; }
 }
+function doneSummary(){
+  el("done-summary").innerHTML=srow("Customer",cap.name)+srow("Vehicle",cap.plate||"New vehicle")+srow("Odometer",Number(cap.miles||0).toLocaleString()+" mi")+srow("Service",cap.oil+" · "+cap.svc)+srow("Health score","100 / 100")+srow("Tag opens",DEMO_URL+"?t="+cap.tag,"url");
+}
+function addLive(vid){
+  SESSION_LIVE.unshift({key:"v-"+vid,vid:vid,nm:cap.name,car:(cap.plate?("Plate "+cap.plate):"New vehicle"),plate:cap.plate,init:initials(cap.name),score:100,status:"Healthy",bay:"Just assigned",phone:cap.phone,dt:new Date().toISOString(),last_service_mileage:(parseInt(cap.miles,10)||null)});
+  renderLive(); loadCustomers();
+}
 async function finishNew(){
   fgo("done");
   el("done-title").textContent="Tag assigned"; el("done-sub").textContent="Stick it in the windshield corner. This car is now tappable.";
-  el("done-summary").innerHTML=srow("Customer",cap.name)+srow("Vehicle",cap.plate)+srow("Odometer",Number(cap.miles).toLocaleString()+" mi")+srow("Service",cap.oil+" · "+cap.svc)+srow("Health score","100 / 100")+srow("Tag opens",DEMO_URL+"?t="+cap.tag,"url");
-  el("done-again").textContent="Assign another";
+  doneSummary(); el("done-again").textContent="Assign another";
   if(window.SHOP_ID&&supaClient){
     el("done-sub").textContent="Saving to your database...";
     var r=await saveAssignment();
-    if(r.ok){
-      el("done-sub").textContent="Saved. Stick it in the windshield corner. This car is now tappable.";
-      SESSION_LIVE.unshift({key:"v-"+r.vid,vid:r.vid,nm:cap.name,car:(cap.plate?("Plate "+cap.plate):"New vehicle"),plate:cap.plate,init:initials(cap.name),score:100,status:"Healthy",bay:"Just assigned",phone:cap.phone,dt:new Date().toISOString(),last_service_mileage:(parseInt(cap.miles,10)||null)});
-      renderLive(); loadCustomers();
-      toast("Saved to your database · "+cap.name);
-    } else {
-      el("done-sub").textContent="The tag is written, but the database save failed. "+(r.error||"");
-      toast("Could not save: "+(r.error||"error"));
-    }
+    if(r.ok){ el("done-sub").textContent="Saved. Stick it in the windshield corner. This car is now tappable."; addLive(r.vid); toast("Saved to your database · "+cap.name); }
+    else { el("done-sub").textContent="The tag is written, but the database save failed. "+(r.error||""); toast("Could not save: "+(r.error||"error")); }
   } else {
     toast("Tag assigned · "+cap.name);
   }
@@ -754,6 +808,7 @@ function finishLog(){
 }
 
 /* ---------- init ---------- */
+(function(){ if(nfcOK){ var s=el("sim-scan"), w=el("sim-write"); if(s) s.style.display="none"; if(w) w.style.display="none"; } })();
 boot();
 </script>
 </body>
