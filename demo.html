@@ -298,6 +298,16 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
         <input id="odo-in" type="number" inputmode="numeric" style="width:100%;background:#16161b;border:1px solid var(--on-line);border-radius:11px;color:var(--on);padding:12px 14px;font-family:'Inter';font-size:1.05rem;outline:none" />
         <button class="dbtn" style="margin-top:10px" onclick="saveOdo()">Save and recheck my score</button>
       </div>
+      <button class="dbtn dark" style="margin-top:10px;font-size:.86rem;padding:11px" onclick="openConsent()">Get service reminders</button>
+      <div id="consent-edit" style="display:none;background:var(--ink-2);border:1px solid var(--on-line);border-radius:14px;padding:14px;margin-top:10px">
+        <div style="font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--on-mut);margin-bottom:8px">Stay in the loop</div>
+        <input id="consent-email" type="email" placeholder="you@email.com" style="width:100%;background:#16161b;border:1px solid var(--on-line);border-radius:11px;color:var(--on);padding:12px 14px;font-family:'Inter';font-size:1rem;outline:none" />
+        <input id="consent-phone" type="tel" placeholder="Mobile for texts (optional)" style="width:100%;margin-top:8px;background:#16161b;border:1px solid var(--on-line);border-radius:11px;color:var(--on);padding:12px 14px;font-family:'Inter';font-size:1rem;outline:none" />
+        <label style="display:flex;gap:9px;align-items:flex-start;font-size:.76rem;color:var(--on-mut);margin-top:11px;line-height:1.45"><input type="checkbox" id="consent-sms" style="margin-top:3px;flex:0 0 auto" /> <span>Text me reminders when my oil is due. Automated texts, message and data rates may apply, reply STOP to cancel. Consent is not a condition of purchase.</span></label>
+        <label style="display:flex;gap:9px;align-items:flex-start;font-size:.76rem;color:var(--on-mut);margin-top:9px;line-height:1.45"><input type="checkbox" id="consent-email-ok" style="margin-top:3px;flex:0 0 auto" /> <span>Email me reminders and offers. Unsubscribe anytime.</span></label>
+        <button class="dbtn" style="margin-top:12px" onclick="saveConsent(this)">Turn on reminders</button>
+        <div style="font-size:.7rem;color:var(--on-mut);margin-top:9px">We only reach out about your car. See our <a href="/privacy.html" style="color:#F06A30">Privacy Policy</a>.</div>
+      </div>
       <div class="label">Service history</div>
       <div>
         <div class="histrow"><span>Full synthetic oil change</span><span class="dt">Mar 2</span></div>
@@ -679,6 +689,28 @@ function restoreOil(){ state.miles=0; save(state); renderHealth(); closeSheet();
 function lastOdo(){ return parseInt(String(car.miles).replace(/[^0-9]/g,""))||40000; }
 function openOdo(){ var e=document.getElementById("odo-edit"); var show=e.style.display==="none"; e.style.display=show?"block":"none"; if(show){ document.getElementById("odo-in").value=lastOdo()+((state.miles!=null)?state.miles:car.since); document.getElementById("odo-in").focus(); } }
 function saveOdo(){ var cur=parseInt(document.getElementById("odo-in").value)||0; var since=Math.max(0,cur-lastOdo()); state.miles=since; save(state); renderHealth(); document.getElementById("odo-edit").style.display="none"; var h=computeHealth(since,car.interval); toast(h.over>0?("Updated · oil is "+h.over+" mi overdue"):"Updated · you are in good shape"); }
+
+// ---------- self-serve consent (driver opts themselves in) ----------
+function openConsent(){ var e=document.getElementById("consent-edit"); var show=e.style.display==="none"; e.style.display=show?"block":"none"; }
+async function saveConsent(btn){
+  var t=params.get("t")||params.get("token");
+  if(!t){ toast("Reminders turn on once your shop assigns your tag"); return; }
+  var email=document.getElementById("consent-email").value.trim();
+  var phone=document.getElementById("consent-phone").value.trim();
+  var sms=document.getElementById("consent-sms").checked;
+  var emailOk=document.getElementById("consent-email-ok").checked;
+  if(!sms&&!emailOk){ toast("Pick text, email, or both"); return; }
+  if(emailOk&&!email){ toast("Add your email address"); return; }
+  if(sms&&!phone){ toast("Add your mobile number"); return; }
+  btn.textContent="Saving..."; btn.disabled=true;
+  try{
+    var r=await fetch("/api/consent",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:t,email:email,phone:phone,sms:sms,emailOk:emailOk})});
+    var d=await r.json();
+    btn.textContent="Turn on reminders"; btn.disabled=false;
+    if(d&&d.ok){ document.getElementById("consent-edit").style.display="none"; state.remindersOn=true; save(state); toast("You're set. We'll only reach out when it matters."); }
+    else { toast((d&&d.error)?("Could not save: "+d.error):"Could not save reminders"); }
+  }catch(e){ btn.textContent="Turn on reminders"; btn.disabled=false; toast("Could not reach the server"); }
+}
 
 // ---------- live data from the database (real tag) ----------
 async function loadTagData(){
