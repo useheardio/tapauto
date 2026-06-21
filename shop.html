@@ -186,6 +186,8 @@ input{font-family:inherit}
 .mstep b{color:var(--text)}
 .mstep .n{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--accent-tint);color:var(--accent-deep);display:grid;place-items:center;font-family:"Sora";font-weight:700;font-size:.82rem}
 #manual-url{font-size:.82rem}
+.crow{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 15px;box-shadow:var(--shadow);margin-bottom:9px}
+.crow .tx{flex:1}.crow .tx .t{font-weight:600;font-size:.92rem}.crow .tx .d{font-size:.78rem;color:var(--muted);margin-top:1px}
 </style>
 </head>
 <body>
@@ -340,7 +342,7 @@ input{font-family:inherit}
     <div class="actrow">
       <button class="actbtn" onclick="toast('Approval pushed to the customer phone')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>Push a service</button>
       <button class="actbtn" onclick="toast('Charged $63.40 to Visa on file · receipt sent')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>Collect payment</button>
-      <button class="actbtn" onclick="closeCust();startFlow('log')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 4v4h4"/></svg></span>Log a service</button>
+      <button class="actbtn" onclick="logCurrent()"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 4v4h4"/></svg></span>Log a service</button>
       <button class="actbtn" onclick="toast('Opened the customer view of their app')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></span>View their app</button>
     </div>
     <div class="seclbl">Service history</div>
@@ -371,6 +373,11 @@ input{font-family:inherit}
       <div class="field"><label>Plate or VIN</label><input id="in-plate" placeholder="KRT-4471" /></div>
       <div class="field"><label>Customer</label><input id="in-name" placeholder="Marcus" /></div>
       <div class="field"><label>Mobile</label><input id="in-phone" type="tel" placeholder="(919) 555 0142" /></div>
+      <div class="field"><label>Email (receipts and reminders)</label><input id="in-email" type="email" placeholder="marcus@email.com" /></div>
+      <div class="field"><label>Reminders from Tap Auto</label>
+        <div class="crow"><div class="tx"><div class="t">Text reminders</div><div class="d">A friendly nudge when oil is due</div></div><button type="button" class="toggle" id="cons-sms" onclick="this.classList.toggle('on')"></button></div>
+        <div class="crow"><div class="tx"><div class="t">Email reminders</div><div class="d">Receipts plus service reminders</div></div><button type="button" class="toggle" id="cons-email" onclick="this.classList.toggle('on')"></button></div>
+      </div>
       <div class="field"><label>Oil type</label><div class="chips" id="oilchips"></div></div>
       <div class="field"><label>Service</label><div class="chips" id="svcchips"></div></div>
       <div class="spacer"></div>
@@ -604,7 +611,7 @@ async function loadCustomers(){
   if(!window.SHOP_ID||!supaClient){ DBALL=null; ensureKeys(ALL); renderLive(); renderCustomers(); return; }
   try{
     var vq=await supaClient.from("vehicles")
-      .select("id,year,make,model,plate,oil_type,interval_miles,last_service_mileage,last_service_at,vehicle_ownership(active,customers(name,phone))")
+      .select("id,year,make,model,plate,oil_type,interval_miles,last_service_mileage,last_service_at,vehicle_ownership(active,customers(id,name,phone,email,consent_sms,consent_email))")
       .eq("shop_id",window.SHOP_ID).order("created_at",{ascending:false});
     if(vq.error){ DBALL=null; ensureKeys(ALL); renderLive(); renderCustomers(); return; }
     DBALL=(vq.data||[]).map(function(v){
@@ -613,16 +620,20 @@ async function loadCustomers(){
       var nm=cust&&cust.name?cust.name:"Unknown driver";
       var car=[v.year,v.make,v.model].filter(Boolean).join(" ")||(v.plate?("Plate "+v.plate):"Vehicle");
       var score=estHealth(v.interval_miles,v.last_service_at);
-      return { key:"v-"+v.id, vid:v.id, nm:nm, car:car, plate:v.plate||"", init:initials(nm),
-        score:score, status:statusLabel(score),
+      return { key:"v-"+v.id, vid:v.id, cid:(cust&&cust.id)||null, nm:nm, car:car, plate:v.plate||"", init:initials(nm),
+        score:score, status:statusLabel(score), oil_type:v.oil_type||"0W-20 Syn", interval:v.interval_miles||INTERVAL,
         meta:(v.last_service_mileage?Number(v.last_service_mileage).toLocaleString()+" mi":"new"),
-        phone:cust&&cust.phone?cust.phone:"", last_service_mileage:v.last_service_mileage, dt:v.last_service_at };
+        phone:cust&&cust.phone?cust.phone:"", email:cust&&cust.email?cust.email:"",
+        consentSms:!!(cust&&cust.consent_sms), consentEmail:!!(cust&&cust.consent_email),
+        last_service_mileage:v.last_service_mileage, dt:v.last_service_at };
     });
     renderLive(); renderCustomers();
   }catch(e){ DBALL=null; ensureKeys(ALL); renderLive(); renderCustomers(); }
 }
+var CUR=null;
 function openCust(key){
   var c=CUST_INDEX[key]||allList()[0]; if(!c) return;
+  CUR=c;
   el("cd-av").textContent=c.init; el("cd-nm").textContent=c.nm;
   el("cd-car").textContent=(c.car||"")+(c.plate?(" · "+c.plate):"");
   el("cd-score").textContent=c.score; el("cd-status").textContent=c.status;
@@ -666,17 +677,50 @@ function renderBuckets(){
 function sendBucket(i){ toast(BUCKETS[i].done); }
 
 /* ---------- flows ---------- */
+var logVid=null, logCid=null;
 function genToken(){ return (Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,6)); }
+function newCap(){ return {tag:"",plate:"",name:"",phone:"",email:"",oil:"0W-20 Syn",svc:"Oil change",miles:"",interval:INTERVAL,consentSms:false,consentEmail:false}; }
+function resetDetails(){ ["in-plate","in-name","in-phone","in-email"].forEach(function(id){var e=el(id); if(e) e.value="";}); var a=el("cons-sms"),b=el("cons-email"); if(a)a.classList.remove("on"); if(b)b.classList.remove("on"); }
 function startFlow(m){
-  mode=m; cap={tag:"",plate:"",name:"",phone:"",oil:"0W-20 Syn",svc:"Oil change",miles:""};
+  mode=m; cap=newCap(); logVid=null; logCid=null;
   el("flow").classList.add("on");
   if(m==="new" && !nfcOK){ // no Web NFC: generate the token here, write it later with NFC Tools
-    cap.tag=genToken(); el("det-tag").textContent=cap.tag; buildChips(); fgo("details"); return;
+    cap.tag=genToken(); resetDetails(); el("det-tag").textContent=cap.tag; buildChips(); fgo("details"); return;
+  }
+  if(m==="log" && !nfcOK){ // no NFC to read the car: pick it from the list instead
+    closeFlow(); tab("customers"); toast("Find the car below, then tap Log a service"); return;
   }
   el("scan-title").textContent=(m==="new")?"Hold the new tag to your phone":"Tap the car's tag";
   fgo("scan"); resetScanner(); beginScan();
 }
 function detailsBack(){ if(nfcOK) fgo("scan"); else closeFlow(); }
+function logCurrent(){ if(CUR&&CUR.vid){ closeCust(); startLogForCar(CUR); } else { closeCust(); startFlow("log"); } }
+function startLogForCar(c){
+  mode="log"; cap=newCap();
+  cap.plate=c.plate||""; cap.name=c.nm||""; cap.phone=c.phone||""; cap.email=c.email||"";
+  cap.oil=c.oil_type||"0W-20 Syn"; cap.interval=c.interval||INTERVAL;
+  logVid=c.vid; logCid=c.cid||null;
+  el("flow").classList.add("on");
+  el("odo-car").textContent=(c.car||"Vehicle")+(c.nm?(" · "+c.nm):"");
+  renderOdo(); fgo("mileage");
+}
+async function resolveTagToVehicle(token){
+  if(window.SHOP_ID&&supaClient){
+    try{
+      var tq=await supaClient.from("tags").select("vehicle_id,vehicles(plate,oil_type,interval_miles,year,make,model,vehicle_ownership(active,customers(id,name,phone,email)))").eq("token",token).maybeSingle();
+      if(tq.data&&tq.data.vehicle_id){
+        var v=tq.data.vehicles||{}; var own=((v.vehicle_ownership||[]).filter(function(o){return o.active;}))[0]; var cu=own&&own.customers?own.customers:null;
+        logVid=tq.data.vehicle_id; logCid=cu&&cu.id?cu.id:null;
+        cap.plate=v.plate||""; cap.name=cu&&cu.name?cu.name:""; cap.phone=cu&&cu.phone?cu.phone:""; cap.email=cu&&cu.email?cu.email:"";
+        cap.oil=v.oil_type||"0W-20 Syn"; cap.interval=v.interval_miles||INTERVAL; cap.miles="";
+        el("odo-car").textContent=([v.year,v.make,v.model].filter(Boolean).join(" ")||("Plate "+(cap.plate||"car")))+(cap.name?(" · "+cap.name):"");
+        renderOdo(); fgo("mileage"); return;
+      }
+      toast("That tag is not assigned yet. Use Assign a new tag."); closeFlow(); return;
+    }catch(e){ toast("Could not read that tag. Try again."); closeFlow(); return; }
+  }
+  cap.plate="KRT-4471"; cap.name="Marcus"; el("odo-car").textContent="2021 Toyota RAV4 · Marcus"; cap.miles=""; renderOdo(); fgo("mileage");
+}
 function closeFlow(){ el("flow").classList.remove("on"); }
 function fgo(s){ document.querySelectorAll(".fscreen").forEach(function(x){x.classList.toggle("on",x.dataset.f===s);}); }
 function buildChips(){
@@ -698,12 +742,13 @@ function onTagRead(serial){
   el("scan-status").textContent="Tag found"; el("scan-hint").style.display="none";
   setTimeout(function(){
     el("scancore").innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a13 13 0 0 1 0 12M13 4a18 18 0 0 1 0 16"/></svg>';
-    if(mode==="new"){ el("det-tag").textContent=cap.tag; buildChips(); fgo("details"); }
-    else { cap.plate="KRT-4471";cap.name="Marcus"; el("odo-car").textContent="2021 Toyota RAV4 · Marcus"; cap.miles=""; renderOdo(); fgo("mileage"); }
+    if(mode==="new"){ resetDetails(); el("det-tag").textContent=cap.tag; buildChips(); fgo("details"); }
+    else { resolveTagToVehicle(cap.tag); }
   },760);
 }
 function toMileage(){
   cap.plate=el("in-plate").value.trim()||"KRT-4471"; cap.name=el("in-name").value.trim()||"Marcus"; cap.phone=el("in-phone").value.trim()||"(919) 555 0142";
+  cap.email=el("in-email").value.trim(); cap.consentSms=el("cons-sms").classList.contains("on"); cap.consentEmail=el("cons-email").classList.contains("on");
   el("odo-car").textContent="Plate "+cap.plate+" · "+cap.name; cap.miles=""; renderOdo(); fgo("mileage");
 }
 function goBackFromMileage(){ fgo(mode==="new"?"details":"scan"); }
@@ -767,7 +812,7 @@ async function saveAssignment(){
     var shop=window.SHOP_ID;
     var miles=parseInt(cap.miles,10); if(isNaN(miles)) miles=null;
     var nowIso=new Date().toISOString();
-    var cust=await supaClient.from("customers").insert({shop_id:shop,name:cap.name,phone:cap.phone}).select("id").single();
+    var cust=await supaClient.from("customers").insert({shop_id:shop,name:cap.name,phone:cap.phone,email:cap.email||null,consent_sms:!!cap.consentSms,consent_email:!!cap.consentEmail}).select("id").single();
     if(cust.error) return {ok:false,error:cust.error.message};
     var veh=await supaClient.from("vehicles").insert({shop_id:shop,plate:cap.plate,oil_type:cap.oil,interval_miles:INTERVAL,last_service_mileage:miles,last_service_at:nowIso}).select("id").single();
     if(veh.error) return {ok:false,error:veh.error.message};
@@ -801,10 +846,38 @@ async function finishNew(){
     toast("Tag assigned · "+cap.name);
   }
 }
-function finishLog(){
-  el("done-title").textContent="Service logged"; el("done-sub").textContent="Marcus gets a receipt, and his health score is back to 100.";
-  el("done-summary").innerHTML=srow("Customer","Marcus Reyes")+srow("Vehicle","2021 Toyota RAV4")+srow("New odometer",Number(cap.miles).toLocaleString()+" mi")+srow("Service",cap.oil+" · "+cap.svc)+srow("Health score","100 / 100")+srow("Next due",(Number(cap.miles)+INTERVAL).toLocaleString()+" mi");
-  el("done-again").textContent="Log another"; fgo("done"); toast("Service logged · health restored");
+function doneLogSummary(){
+  var miles=Number(cap.miles||0), iv=cap.interval||INTERVAL;
+  el("done-summary").innerHTML=srow("Customer",cap.name||"Driver")+srow("Vehicle",cap.plate||"Vehicle")+srow("New odometer",miles.toLocaleString()+" mi")+srow("Service",cap.oil+" · "+cap.svc)+srow("Health score","100 / 100")+srow("Next due",(cap.miles?(miles+iv).toLocaleString()+" mi":"-"));
+}
+function addServiceLive(){
+  if(logVid){ SESSION_LIVE=SESSION_LIVE.filter(function(x){return x.vid!==logVid;}); SESSION_LIVE.unshift({key:"v-"+logVid,vid:logVid,nm:cap.name||"Driver",car:(cap.plate?("Plate "+cap.plate):"Vehicle"),plate:cap.plate,init:initials(cap.name||"Driver"),score:100,status:"Healthy",bay:"Just serviced",phone:cap.phone,dt:new Date().toISOString(),last_service_mileage:(parseInt(cap.miles,10)||null)}); }
+  renderLive(); loadCustomers();
+}
+async function saveService(){
+  try{
+    var shop=window.SHOP_ID, miles=parseInt(cap.miles,10); if(isNaN(miles)) miles=null;
+    var iv=cap.interval||INTERVAL, nowIso=new Date().toISOString();
+    var locId=null; try{ var lq=await supaClient.from("locations").select("id").eq("shop_id",shop).limit(1).maybeSingle(); if(lq.data) locId=lq.data.id; }catch(e){}
+    var sr=await supaClient.from("service_records").insert({shop_id:shop,vehicle_id:logVid,location_id:locId,mileage:miles,oil_type:cap.oil,services:[cap.svc],next_due_mileage:(miles!=null?miles+iv:null)});
+    if(sr.error) return {ok:false,error:sr.error.message};
+    var up=await supaClient.from("vehicles").update({last_service_mileage:miles,last_service_at:nowIso,oil_type:cap.oil}).eq("id",logVid);
+    if(up.error) return {ok:false,error:up.error.message};
+    return {ok:true};
+  }catch(e){ return {ok:false,error:String(e&&e.message?e.message:e)}; }
+}
+async function finishLog(){
+  fgo("done");
+  el("done-title").textContent="Service logged"; el("done-again").textContent="Done";
+  doneLogSummary();
+  if(window.SHOP_ID&&supaClient&&logVid){
+    el("done-sub").textContent="Saving to your database...";
+    var r=await saveService();
+    if(r.ok){ el("done-sub").textContent=(cap.name?(cap.name.split(" ")[0]+" is"):"This car is")+" good to go. Health back to 100."; addServiceLive(); toast("Service logged · health restored"); }
+    else { el("done-sub").textContent="Save failed: "+(r.error||""); toast("Could not save: "+(r.error||"error")); }
+  } else {
+    el("done-sub").textContent="Service logged. Health restored."; toast("Service logged");
+  }
 }
 
 /* ---------- init ---------- */
