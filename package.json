@@ -1,0 +1,9 @@
+{
+  "name": "tapauto",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tap Auto - the smart windshield tag that brings drivers back.",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  }
+}

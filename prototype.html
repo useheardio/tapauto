@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tap Auto · Interactive Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#F4F2EC;--bg-elev:#FBFAF6;--bg-tint:#ECE9E1;--surface:#FFFFFF;--surface-2:#F8F6F1;
+  --line:rgba(28,25,21,.10);--line-strong:rgba(28,25,21,.17);
+  --text:#1B1A18;--muted:#6A675F;--muted-2:#9A968C;
+  --accent:#E0571E;--accent-soft:#F06A30;--accent-deep:#B8420F;--accent-tint:rgba(224,87,30,.09);
+  --ok:#3E8E5E;--ok-tint:rgba(62,142,94,.12);--warn:#C98A1B;
+  --ink:#131316;--ink-2:#1B1B20;--on-ink:#F4F1EA;--on-ink-mut:rgba(244,241,234,.6);--on-ink-line:rgba(255,255,255,.1);
+  --radius:18px;--radius-sm:12px;--ease:cubic-bezier(.22,1,.36,1);
+  --shadow:0 1px 2px rgba(24,20,15,.04),0 12px 30px -16px rgba(24,20,15,.16);
+  --shadow-lg:0 2px 5px rgba(24,20,15,.05),0 34px 64px -26px rgba(24,20,15,.2);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:"Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
+h1,h2,h3,h4{font-family:"Sora",sans-serif;letter-spacing:-.02em;line-height:1.1}
+.mono{font-family:"Space Mono",monospace}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+
+/* Prototype chrome */
+.bar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:14px 22px;background:rgba(248,246,241,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-family:"Sora";font-weight:700;font-size:1.05rem}
+.brand .mk{width:28px;height:28px;border-radius:8px;background:var(--accent);display:grid;place-items:center}
+.brand .mk svg{width:16px;height:16px}
+.brand .tag{font-family:"Space Mono",monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2);border:1px solid var(--line);padding:3px 8px;border-radius:20px;margin-left:4px}
+.seg{display:flex;background:var(--bg-tint);border:1px solid var(--line);border-radius:100px;padding:4px}
+.seg button{padding:8px 18px;border-radius:100px;font-family:"Sora";font-weight:600;font-size:.88rem;color:var(--muted);transition:.25s var(--ease)}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.hint{font-size:.78rem;color:var(--muted-2);font-family:"Space Mono",monospace}
+@media(max-width:640px){.hint{display:none}}
+
+.stage{max-width:1180px;margin:0 auto;padding:36px 22px 80px}
+.view{display:none}.view.on{display:block}
+
+/* ===== DRIVER ===== */
+.driver-wrap{display:grid;grid-template-columns:1fr auto 1fr;gap:30px;align-items:center}
+.driver-side{max-width:300px}
+.driver-side.left{justify-self:end;text-align:right}
+.driver-side h2{font-size:1.5rem;margin-bottom:10px}
+.driver-side p{color:var(--muted);font-size:.95rem}
+.driver-side .ey{font-family:"Space Mono",monospace;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.tagbtn{margin-top:18px;display:inline-flex;align-items:center;gap:10px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:100px;font-family:"Sora";font-weight:600;font-size:.9rem;box-shadow:var(--shadow)}
+.tagbtn .nfc{color:var(--accent-soft);display:grid;place-items:center}
+.tagbtn:hover{transform:translateY(-2px)}
+
+.phone{position:relative;width:300px;height:620px;border-radius:50px;background:linear-gradient(160deg,#2a2a30,#0f0f12);padding:13px;
+  box-shadow:0 60px 100px -40px rgba(24,20,15,.5),0 0 0 1px rgba(255,255,255,.06);flex:0 0 auto;justify-self:center}
+.phone::after{content:"";position:absolute;top:21px;left:50%;transform:translateX(-50%);width:94px;height:23px;background:#000;border-radius:18px;z-index:30}
+.scr{position:relative;width:100%;height:100%;border-radius:38px;overflow:hidden;background:#0b0b0e;color:var(--on-ink)}
+.scr .pad{position:absolute;inset:0;padding:56px 18px 20px;display:flex;flex-direction:column;overflow-y:auto}
+.dstep{display:none;flex-direction:column;gap:13px;min-height:100%}
+.dstep.on{display:flex}
+.statusbar{position:absolute;top:18px;left:0;right:0;display:flex;justify-content:space-between;padding:0 26px;font-size:.72rem;color:var(--on-ink-mut);font-family:"Space Mono",monospace;z-index:20}
+
+/* driver UI bits */
+.tier-pill{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-family:"Space Mono",monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;padding:4px 9px;border-radius:20px;border:1px solid var(--on-ink-line);color:var(--on-ink-mut)}
+.tier-pill .d{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.d-brand{display:flex;align-items:center;justify-content:space-between;margin-top:2px}
+.d-brand .b{display:flex;align-items:center;gap:7px;font-family:"Sora";font-weight:700;font-size:.92rem}
+.d-brand .b i{width:13px;height:13px;border-radius:4px;background:var(--accent);display:inline-block}
+.d-brand .who{font-size:.72rem;color:var(--on-ink-mut);font-family:"Space Mono",monospace}
+.car-hd{margin-top:6px}
+.car-hd .yr{font-family:"Space Mono",monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--on-ink-mut)}
+.car-hd .nm{font-family:"Sora";font-weight:700;font-size:1.45rem;margin-top:3px}
+.due{background:linear-gradient(155deg,rgba(224,87,30,.2),rgba(224,87,30,.04));border:1px solid rgba(224,87,30,.34);border-radius:16px;padding:15px}
+.due .k{font-family:"Space Mono",monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-soft)}
+.due .v{font-family:"Sora";font-weight:800;font-size:1.5rem;margin-top:3px}
+.due .v small{font-size:.78rem;color:var(--on-ink-mut);font-weight:500}
+.due .bar{height:6px;border-radius:6px;background:rgba(255,255,255,.12);margin-top:12px;overflow:hidden}
+.due .bar i{display:block;height:100%;width:78%;background:linear-gradient(90deg,var(--accent),var(--accent-soft))}
+.cells{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.cell{background:#16161b;border:1px solid var(--on-ink-line);border-radius:12px;padding:10px 12px}
+.cell .k{font-family:"Space Mono",monospace;font-size:.54rem;letter-spacing:.08em;text-transform:uppercase;color:var(--on-ink-mut)}
+.cell .v{font-size:.92rem;font-weight:700;margin-top:3px}
+.histrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--on-ink-line);font-size:.82rem}
+.histrow:last-child{border-bottom:none}
+.histrow .dt{color:var(--on-ink-mut);font-family:"Space Mono",monospace;font-size:.7rem}
+.coupon{display:flex;align-items:center;gap:8px;border:1px dashed rgba(255,255,255,.22);border-radius:11px;padding:9px 12px;font-size:.78rem;color:var(--on-ink-mut)}
+.coupon b{color:var(--on-ink)}
+.sect-lbl{font-family:"Space Mono",monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--on-ink-mut);margin-top:4px}
+.dbtn{background:var(--accent);color:#fff;text-align:center;font-family:"Sora";font-weight:700;font-size:.95rem;padding:13px;border-radius:13px;width:100%}
+.dbtn.ghost{background:transparent;color:var(--on-ink);border:1px solid var(--on-ink-line)}
+.dbtn.dark{background:#16161b;color:var(--on-ink);border:1px solid var(--on-ink-line)}
+.spacer{flex:1}
+.card-on-file{display:flex;align-items:center;gap:10px;background:#16161b;border:1px solid var(--on-ink-line);border-radius:12px;padding:11px 13px;font-size:.82rem}
+.card-on-file .visa{font-family:"Space Mono",monospace;font-weight:700;font-size:.7rem;background:#1d4ed8;color:#fff;padding:3px 7px;border-radius:5px}
+.big-amt{font-family:"Sora";font-weight:800;font-size:2.6rem;letter-spacing:-.03em;text-align:center}
+.hold{position:relative;background:var(--accent);color:#fff;text-align:center;font-family:"Sora";font-weight:700;padding:15px;border-radius:14px;overflow:hidden}
+.hold .fill{position:absolute;inset:0;background:rgba(0,0,0,.18);width:0;transition:width .1s linear}
+.paid-check{width:64px;height:64px;border-radius:50%;background:var(--ok);display:grid;place-items:center;margin:10px auto;color:#fff}
+.center-msg{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;margin:auto 0}
+.center-msg h3{font-size:1.3rem}.center-msg p{color:var(--on-ink-mut);font-size:.86rem;max-width:220px}
+.otp{display:flex;gap:8px;justify-content:center;margin:6px 0}
+.otp span{width:38px;height:46px;border-radius:10px;background:#16161b;border:1px solid var(--on-ink-line);display:grid;place-items:center;font-family:"Sora";font-weight:700;font-size:1.2rem}
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:13px 20px;border-radius:100px;font-size:.86rem;box-shadow:var(--shadow-lg);opacity:0;transition:.4s var(--ease);z-index:80;display:flex;align-items:center;gap:9px}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast .d{width:8px;height:8px;border-radius:50%;background:var(--accent-soft)}
+
+.rail{display:flex;gap:6px;justify-content:center;margin-top:24px;flex-wrap:wrap}
+.rail button{font-family:"Space Mono",monospace;font-size:.64rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--surface);border:1px solid var(--line);padding:8px 13px;border-radius:100px;transition:.2s}
+.rail button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.rail .ar{color:var(--muted-2);align-self:center}
+.proto-note{text-align:center;color:var(--muted-2);font-size:.78rem;margin-top:14px;font-family:"Space Mono",monospace}
+
+/* ===== SHOP ===== */
+.shop{display:grid;grid-template-columns:212px 1fr;gap:24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;min-height:640px}
+.shop-side{background:var(--bg-elev);border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;gap:4px}
+.shop-side .loc{padding:6px 10px 16px}
+.shop-side .loc .nm{font-family:"Sora";font-weight:700;font-size:.98rem}
+.shop-side .loc .sub{font-size:.72rem;color:var(--muted-2);margin-top:2px}
+.snav{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:11px;font-weight:600;font-size:.9rem;color:var(--muted);transition:.2s;width:100%;text-align:left}
+.snav svg{width:18px;height:18px;flex:0 0 auto}
+.snav.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.snav .badge{margin-left:auto;background:var(--accent);color:#fff;font-size:.62rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:grid;place-items:center;padding:0 5px}
+.shop-main{padding:28px 30px}
+.stab{display:none}.stab.on{display:block}
+.stab-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.stab-hd h2{font-size:1.5rem}
+.stab-hd .sub{color:var(--muted);font-size:.9rem;margin-top:4px}
+.stab-hd .date{font-family:"Space Mono",monospace;font-size:.74rem;color:var(--muted-2)}
+
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.col-hd{font-family:"Space Mono",monospace;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-bottom:11px;display:flex;align-items:center;gap:7px}
+.col-hd .dot{width:7px;height:7px;border-radius:50%}
+.ccard{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:11px;transition:.25s}
+.ccard:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+.ccard.live{background:#fff;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+.ccard .nm{font-family:"Sora";font-weight:700;font-size:.96rem;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ccard .car{font-size:.8rem;color:var(--muted);margin-top:2px}
+.ccard .meta{font-family:"Space Mono",monospace;font-size:.68rem;color:var(--muted-2);margin-top:9px;display:flex;align-items:center;gap:6px}
+.pill{font-family:"Space Mono",monospace;font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:20px;font-weight:700}
+.pill.here{background:var(--accent-tint);color:var(--accent-deep)}
+.pill.due{background:#FBEFD7;color:var(--warn)}
+.pill.drift{background:var(--bg-tint);color:var(--muted)}
+.welcome{background:linear-gradient(135deg,var(--ink),#23232a);color:#fff;border-radius:16px;padding:18px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:var(--shadow)}
+.welcome .l .k{font-family:"Space Mono",monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-soft)}
+.welcome .l .v{font-family:"Sora";font-weight:700;font-size:1.15rem;margin-top:4px}
+.welcome .l .s{color:var(--on-ink-mut);font-size:.84rem;margin-top:3px}
+.welcome .r{font-family:"Space Mono",monospace;font-size:.72rem;color:var(--on-ink-mut);text-align:right}
+
+/* approvals */
+.wo{background:var(--surface-2);border:1px solid var(--line);border-radius:16px;padding:22px;max-width:560px}
+.wo .top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:6px}
+.wo .top .nm{font-family:"Sora";font-weight:700;font-size:1.05rem}
+.wo .top .st{font-family:"Space Mono",monospace;font-size:.7rem;color:var(--ok);background:var(--ok-tint);padding:4px 10px;border-radius:20px}
+.line-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.line-item:last-child{border-bottom:none}
+.line-item .info .t{font-weight:600;font-size:.95rem}
+.line-item .info .d{font-size:.8rem;color:var(--muted);margin-top:2px}
+.line-item .price{font-family:"Sora";font-weight:700;margin-left:auto}
+.sbtn{background:var(--accent);color:#fff;padding:9px 15px;border-radius:100px;font-family:"Sora";font-weight:600;font-size:.82rem;transition:.25s}
+.sbtn:hover{background:var(--accent-deep)}
+.sbtn.ghost{background:transparent;border:1px solid var(--line-strong);color:var(--text)}
+.sbtn.wait{background:var(--bg-tint);color:var(--muted);pointer-events:none}
+.sbtn.done{background:var(--ok-tint);color:var(--ok);pointer-events:none}
+
+/* record */
+.rec-hd{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.avatar{width:54px;height:54px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-family:"Sora";font-weight:700;font-size:1.2rem;flex:0 0 auto}
+.rec-hd .nm{font-family:"Sora";font-weight:700;font-size:1.3rem}
+.rec-hd .sub{color:var(--muted);font-size:.88rem;margin-top:2px}
+.rec-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.kpi{background:var(--surface-2);border:1px solid var(--line);border-radius:13px;padding:15px}
+.kpi .k{font-family:"Space Mono",monospace;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2)}
+.kpi .v{font-family:"Sora";font-weight:700;font-size:1.25rem;margin-top:5px}
+.kpi .v.accent{color:var(--accent)}
+.tbl{width:100%;border-collapse:collapse;font-size:.88rem}
+.tbl th{text-align:left;font-family:"Space Mono",monospace;font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2);font-weight:400;padding:10px 12px;border-bottom:1px solid var(--line)}
+.tbl td{padding:13px 12px;border-bottom:1px solid var(--line)}
+.tbl tr:last-child td{border-bottom:none}
+
+/* analytics */
+.an-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
+.an{background:var(--surface-2);border:1px solid var(--line);border-radius:15px;padding:20px}
+.an .k{font-family:"Space Mono",monospace;font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2)}
+.an .v{font-family:"Sora";font-weight:800;font-size:2rem;letter-spacing:-.03em;margin-top:8px}
+.an .v .u{color:var(--accent);font-size:1.3rem}
+.an .t{font-size:.78rem;color:var(--ok);margin-top:6px;font-weight:600}
+.sendrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.sendrow:last-child{border-bottom:none}
+
+@media(max-width:880px){
+  .driver-wrap{grid-template-columns:1fr;gap:18px}
+  .driver-side{display:none}
+  .shop{grid-template-columns:1fr}
+  .shop-side{flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid var(--line)}
+  .shop-side .loc{display:none}
+  .snav{white-space:nowrap}
+  .board{grid-template-columns:1fr}
+  .rec-grid,.an-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="brand">
+    <span class="mk"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a13 13 0 0 1 0 12M13 4a18 18 0 0 1 0 16" stroke="#fff" stroke-width="2"/></svg></span>
+    Tap Auto <span class="tag">Prototype</span>
+  </div>
+  <div class="seg">
+    <button id="seg-driver" class="on" onclick="setMode('driver')">Driver app</button>
+    <button id="seg-shop" onclick="setMode('shop')">Shop dashboard</button>
+  </div>
+  <div class="hint">mock data · not yet wired to a backend</div>
+</div>
+
+<div class="stage">
+
+  <!-- ============ DRIVER ============ -->
+  <div class="view on" id="view-driver">
+    <div class="driver-wrap">
+      <div class="driver-side left" id="dside-l">
+        <div class="ey">Tier 0 · anyone</div>
+        <h2>A tap with zero friction</h2>
+        <p>No app, no login, no account. Anyone who taps sees a benign "here's what this car needs" page. That's how you turn a sticker into a lead.</p>
+      </div>
+
+      <div class="phone">
+        <div class="scr">
+          <div class="statusbar"><span>9:41</span><span>tapauto.com</span></div>
+          <div class="pad">
+
+            <!-- STEP: TAP (Tier 0) -->
+            <div class="dstep on" data-step="tap">
+              <span class="tier-pill"><span class="d"></span>Just tapped · not signed in</span>
+              <div class="car-hd"><div class="yr">You tapped a Tap Auto tag</div><div class="nm">2021 Toyota RAV4</div></div>
+              <div class="due"><div class="k">Looks due for</div><div class="v">Oil change <small>in ~3 weeks</small></div><div class="bar"><i></i></div></div>
+              <p style="font-size:.85rem;color:var(--on-ink-mut)">This is the public view. No history, no personal info, no payment, until you sign in on your own phone.</p>
+              <div class="spacer"></div>
+              <div class="dbtn" onclick="goStep('save')">This is my car, save it</div>
+              <div class="dbtn ghost" onclick="toast('Guest booking, no account needed')">Book as a guest</div>
+              <div class="proto-note" style="color:var(--on-ink-mut);margin-top:4px">Private by design · no app</div>
+            </div>
+
+            <!-- STEP: SAVE / VERIFY (Tier 1) -->
+            <div class="dstep" data-step="save">
+              <span class="tier-pill"><span class="d"></span>Saving your car · Tier 1</span>
+              <div class="car-hd"><div class="yr">Verify it's you</div><div class="nm">Enter the code</div></div>
+              <p style="font-size:.85rem;color:var(--on-ink-mut)">We texted a 4-digit code to ···· 4471. One tap, no password.</p>
+              <div class="otp"><span>8</span><span>1</span><span>4</span><span>2</span></div>
+              <div class="coupon">🎟️ <span><b>$15 off</b> your next visit, applied automatically</span></div>
+              <div class="spacer"></div>
+              <div class="dbtn" onclick="goStep('account')">Verify &amp; save my car</div>
+              <div class="proto-note" style="color:var(--on-ink-mut);margin-top:4px">SMS code · or a magic link</div>
+            </div>
+
+            <!-- STEP: ACCOUNT (Tier 2 home) -->
+            <div class="dstep" data-step="account">
+              <div class="d-brand"><span class="b"><i></i>Sir Walter Quick Lube</span><span class="who">Hi, Marcus</span></div>
+              <div class="car-hd"><div class="yr">Your car</div><div class="nm">2021 Toyota RAV4</div></div>
+              <div class="due"><div class="k">Next oil change</div><div class="v">~3 weeks <small>/ 480 mi</small></div><div class="bar"><i></i></div></div>
+              <div class="cells">
+                <div class="cell"><div class="k">Oil type</div><div class="v">0W-20 Syn</div></div>
+                <div class="cell"><div class="k">Mileage</div><div class="v">42,180</div></div>
+              </div>
+              <div class="sect-lbl">Service history</div>
+              <div>
+                <div class="histrow"><span>Full synthetic oil change</span><span class="dt">Mar 2</span></div>
+                <div class="histrow"><span>Oil change + air filter</span><span class="dt">Nov 14</span></div>
+                <div class="histrow"><span>Tire rotation</span><span class="dt">Aug 1</span></div>
+              </div>
+              <div class="coupon">🎟️ <span><b>$15 off</b>, because you're due</span></div>
+              <div class="card-on-file"><span class="visa">VISA</span> ···· 6411 on file · tap-to-pay on</div>
+              <div class="spacer"></div>
+              <div class="dbtn" onclick="toast('Booked. Sir Walter will expect you')">Book your spot · 2 taps</div>
+              <div class="proto-note" style="color:var(--on-ink-mut);margin-top:4px">Tier 2 · full account</div>
+            </div>
+
+            <!-- STEP: APPROVAL -->
+            <div class="dstep" data-step="approve">
+              <span class="tier-pill"><span class="d"></span>Message from your tech</span>
+              <div class="spacer"></div>
+              <div class="center-msg">
+                <div style="width:54px;height:54px;border-radius:14px;background:var(--accent);display:grid;place-items:center;color:#fff">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+                </div>
+                <h3 id="appr-title">Quick approval needed</h3>
+                <p id="appr-body">Your wiper blades are worn and won't pass inspection. Want us to swap them while you're here?</p>
+                <div style="font-family:'Sora';font-weight:800;font-size:1.8rem;margin-top:4px">$14.00</div>
+              </div>
+              <div class="spacer"></div>
+              <div id="appr-actions">
+                <div class="dbtn" onclick="driverApprove()">Approve $14</div>
+                <div class="dbtn ghost" onclick="toast('Declined, tech notified')" style="margin-top:9px">Not this time</div>
+              </div>
+              <div id="appr-done" style="display:none">
+                <div class="center-msg"><div class="paid-check"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><h3>Approved</h3><p>Your tech is on it. No walking back to the lobby.</p></div>
+              </div>
+            </div>
+
+            <!-- STEP: PAY -->
+            <div class="dstep" data-step="pay">
+              <div class="d-brand"><span class="b"><i></i>Sir Walter Quick Lube</span><span class="who">Service complete</span></div>
+              <div id="pay-pre">
+                <div class="car-hd"><div class="yr">Your total</div></div>
+                <div class="big-amt">$63.40</div>
+                <div style="margin-top:6px">
+                  <div class="histrow"><span>Full synthetic oil change</span><span class="dt">$49.40</span></div>
+                  <div class="histrow"><span>Wiper blades (approved)</span><span class="dt">$14.00</span></div>
+                </div>
+                <div class="card-on-file" style="margin-top:14px"><span class="visa">VISA</span> ···· 6411 · pay with Face ID</div>
+                <div class="spacer"></div>
+                <div class="hold" id="holdbtn" onmousedown="startHold()" onmouseup="cancelHold()" onmouseleave="cancelHold()" ontouchstart="startHold()" ontouchend="cancelHold()">
+                  <span class="fill" id="holdfill"></span>Hold to pay
+                </div>
+                <div class="proto-note" style="color:var(--on-ink-mut);margin-top:8px">No counter, no paper</div>
+              </div>
+              <div id="pay-done" style="display:none">
+                <div class="spacer"></div>
+                <div class="center-msg">
+                  <div class="paid-check"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+                  <h3>Paid · $63.40</h3>
+                  <p>Receipt texted to you. You're all set. Drive safe, Marcus.</p>
+                </div>
+                <div class="spacer"></div>
+                <div class="coupon">🎟️ <span>Come back by Sept and your next change is <b>$10 off</b></span></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="driver-side" id="dside-r">
+        <div class="ey">Tier 2 · the payoff</div>
+        <h2>The loop that keeps them</h2>
+        <p>Saved car, history, a card on file, mid-service approvals, and tap-to-pay. The longer they use it, the more their car's life lives with your shop.</p>
+      </div>
+    </div>
+
+    <div class="rail">
+      <button class="on" data-r="tap" onclick="goStep('tap')">1 · Tap</button><span class="ar">→</span>
+      <button data-r="save" onclick="goStep('save')">2 · Save</button><span class="ar">→</span>
+      <button data-r="account" onclick="goStep('account')">3 · Account</button><span class="ar">→</span>
+      <button data-r="approve" onclick="goStep('approve')">4 · Approve</button><span class="ar">→</span>
+      <button data-r="pay" onclick="goStep('pay')">5 · Pay</button>
+    </div>
+    <div class="proto-note">Click through the flow, or jump to any step. This is what a driver sees on their own phone.</div>
+  </div>
+
+  <!-- ============ SHOP ============ -->
+  <div class="view" id="view-shop">
+    <div class="shop">
+      <aside class="shop-side">
+        <div class="loc"><div class="nm">Sir Walter Quick Lube</div><div class="sub">Raleigh, NC · 3 bays</div></div>
+        <button class="snav on" data-t="board" onclick="setTab('board')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Live board</button>
+        <button class="snav" data-t="approvals" onclick="setTab('approvals')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Approvals <span class="badge" id="appr-badge">1</span></button>
+        <button class="snav" data-t="customers" onclick="setTab('customers')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Customers</button>
+        <button class="snav" data-t="analytics" onclick="setTab('analytics')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Analytics</button>
+      </aside>
+
+      <main class="shop-main">
+        <!-- BOARD -->
+        <div class="stab on" id="tab-board">
+          <div class="stab-hd"><div><h2>Live board</h2><div class="sub">Who's here, who's due, who's drifting</div></div><div class="date">Mon, Jun 15 · 9:41a</div></div>
+          <div class="welcome">
+            <div class="l"><div class="k">Pulling in now · recognized</div><div class="v">Marcus R. · 2021 RAV4</div><div class="s">4th visit · due for oil change · $15 coupon active · Visa on file</div></div>
+            <div class="r">tapped 30s ago<br>send to bay 2</div>
+          </div>
+          <div class="board">
+            <div><div class="col-hd"><span class="dot" style="background:var(--accent)"></span>Here now</div>
+              <div class="ccard live"><div class="nm">Marcus Reyes <span class="pill here">In bay 2</span></div><div class="car">2021 Toyota RAV4 · oil change</div><div class="meta">⏱ checked in 9:41a · history loaded</div></div>
+              <div class="ccard"><div class="nm">Dana Whitfield <span class="pill here">Bay 1</span></div><div class="car">2019 F-150 · oil + rotation</div><div class="meta">⏱ checked in 9:28a</div></div>
+            </div>
+            <div><div class="col-hd"><span class="dot" style="background:var(--warn)"></span>Due soon</div>
+              <div class="ccard"><div class="nm">Priya N. <span class="pill due">Due in 5d</span></div><div class="car">2022 CR-V</div><div class="meta">last in Mar 18 · reminder queued</div></div>
+              <div class="ccard"><div class="nm">Sam O. <span class="pill due">Due now</span></div><div class="car">2018 Camry</div><div class="meta">last in Dec 9 · reminder queued</div></div>
+            </div>
+            <div><div class="col-hd"><span class="dot" style="background:var(--muted-2)"></span>Drifting · 90+ days</div>
+              <div class="ccard"><div class="nm">Terrence B. <span class="pill drift">Win back</span></div><div class="car">2020 Civic</div><div class="meta">last in Jan 4 · send offer</div></div>
+              <div class="ccard"><div class="nm">Lena K. <span class="pill drift">Win back</span></div><div class="car">2017 Outback</div><div class="meta">last in Dec 1 · send offer</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- APPROVALS -->
+        <div class="stab" id="tab-approvals">
+          <div class="stab-hd"><div><h2>Approvals</h2><div class="sub">Push an upsell to the customer's phone, get a yes without leaving the bay</div></div></div>
+          <div class="wo">
+            <div class="top"><div class="nm">Marcus Reyes · 2021 RAV4</div><div class="st">In progress · bay 2</div></div>
+            <div class="line-item"><div class="info"><div class="t">Full synthetic oil change</div><div class="d">Standard service</div></div><span class="price">$49.40</span></div>
+            <div class="line-item">
+              <div class="info"><div class="t">Wiper blades</div><div class="d">Worn, recommend before inspection</div></div>
+              <span class="price">$14.00</span>
+              <button class="sbtn" id="send-appr" onclick="sendApproval()">Send to phone</button>
+            </div>
+            <div class="line-item"><div class="info"><div class="t">Cabin air filter</div><div class="d">Looks fine, no action</div></div><span class="price" style="color:var(--muted-2)">n/a</span></div>
+            <div style="margin-top:16px;font-size:.84rem;color:var(--muted)" id="appr-status">Tip: hit "Send to phone" and it'll jump to the driver view so you can see what the customer gets.</div>
+          </div>
+        </div>
+
+        <!-- CUSTOMERS -->
+        <div class="stab" id="tab-customers">
+          <div class="stab-hd"><div><h2>Customer record</h2><div class="sub">Everything tied to the vehicle, not just the visit</div></div></div>
+          <div class="rec-hd"><div class="avatar">MR</div><div><div class="nm">Marcus Reyes</div><div class="sub">2021 Toyota RAV4 · plate KRT-4471 · Visa ···· 6411 on file</div></div></div>
+          <div class="rec-grid">
+            <div class="kpi"><div class="k">Visits</div><div class="v">4</div></div>
+            <div class="kpi"><div class="k">Lifetime</div><div class="v">$312</div></div>
+            <div class="kpi"><div class="k">Last in</div><div class="v">Mar 2</div></div>
+            <div class="kpi"><div class="k">Next due</div><div class="v accent">~Jun 28</div></div>
+          </div>
+          <table class="tbl">
+            <thead><tr><th>Date</th><th>Service</th><th>Mileage</th><th>Total</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">Mar 2, 2026</td><td>Full synthetic oil change</td><td>42,180</td><td>$49.40</td></tr>
+              <tr><td class="mono">Nov 14, 2025</td><td>Oil change + air filter</td><td>38,902</td><td>$72.10</td></tr>
+              <tr><td class="mono">Aug 1, 2025</td><td>Tire rotation</td><td>35,510</td><td>$29.00</td></tr>
+              <tr><td class="mono">May 9, 2025</td><td>Full synthetic oil change</td><td>32,240</td><td>$49.40</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ANALYTICS -->
+        <div class="stab" id="tab-analytics">
+          <div class="stab-hd"><div><h2>Analytics</h2><div class="sub">The numbers that tell you the tag is working</div></div><div class="date">sample data</div></div>
+          <div class="an-grid">
+            <div class="an"><div class="k">Tags tapped · 30d</div><div class="v">418</div><div class="t">↑ 22% vs last month</div></div>
+            <div class="an"><div class="k">Rebook rate</div><div class="v">61<span class="u">%</span></div><div class="t">↑ from 38% baseline</div></div>
+            <div class="an"><div class="k">Approvals said yes</div><div class="v">$2,140</div><div class="t">mid-service upsells</div></div>
+            <div class="an"><div class="k">Google reviews</div><div class="v">37</div><div class="t">↑ 4.6 → 4.8 stars</div></div>
+          </div>
+          <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:15px;padding:20px;max-width:560px">
+            <div class="col-hd">Reminders ready to send</div>
+            <div class="sendrow"><div><b style="font-weight:600">Sam O.</b> · 2018 Camry · due now</div><button class="sbtn ghost" onclick="toast('Reminder + $15 offer sent')">Send offer</button></div>
+            <div class="sendrow"><div><b style="font-weight:600">Terrence B.</b> · 2020 Civic · 90+ days</div><button class="sbtn ghost" onclick="toast('Win-back offer sent')">Send offer</button></div>
+            <div class="sendrow"><div><b style="font-weight:600">Lena K.</b> · 2017 Outback · 90+ days</div><button class="sbtn ghost" onclick="toast('Win-back offer sent')">Send offer</button></div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <div class="proto-note">This is the operator's view: realtime board, one-tap approvals, the full vehicle record, and proof it's working.</div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"><span class="d"></span><span id="toast-msg"></span></div>
+
+<script>
+let approvedFlag=false, holdTimer=null, holdVal=0;
+
+function setMode(m){
+  document.getElementById('view-driver').classList.toggle('on',m==='driver');
+  document.getElementById('view-shop').classList.toggle('on',m==='shop');
+  document.getElementById('seg-driver').classList.toggle('on',m==='driver');
+  document.getElementById('seg-shop').classList.toggle('on',m==='shop');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function goStep(s){
+  document.querySelectorAll('.dstep').forEach(d=>d.classList.toggle('on',d.dataset.step===s));
+  document.querySelectorAll('.rail [data-r]').forEach(b=>b.classList.toggle('on',b.dataset.r===s));
+  // contextual side copy
+  const l=document.getElementById('dside-l'), r=document.getElementById('dside-r');
+  // reset pay/approve states when navigating fresh
+  if(s!=='pay'){document.getElementById('pay-pre').style.display='block';document.getElementById('pay-done').style.display='none';document.getElementById('holdfill').style.width='0';}
+}
+function setTab(t){
+  document.querySelectorAll('.stab').forEach(x=>x.classList.toggle('on',x.id==='tab-'+t));
+  document.querySelectorAll('.snav').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+}
+function toast(msg){
+  const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// Shop -> Driver: send approval to the phone
+function sendApproval(){
+  approvedFlag=false;
+  document.getElementById('appr-actions').style.display='block';
+  document.getElementById('appr-done').style.display='none';
+  document.getElementById('send-appr').className='sbtn wait';
+  document.getElementById('send-appr').textContent='Awaiting…';
+  document.getElementById('appr-status').innerHTML="Sent to Marcus's phone. We jumped you to the driver view so you can see exactly what the customer gets.";
+  setMode('driver');
+  goStep('approve');
+  toast("Approval sent to the customer's phone");
+}
+// Driver approves -> reflect back in shop
+function driverApprove(){
+  approvedFlag=true;
+  document.getElementById('appr-actions').style.display='none';
+  document.getElementById('appr-done').style.display='block';
+  const b=document.getElementById('send-appr');b.className='sbtn done';b.textContent='Approved ✓';
+  document.getElementById('appr-status').innerHTML='<b style="color:var(--ok)">Approved by customer at 9:42a.</b> Tech can proceed without walking to the lobby.';
+  toast('Customer approved · tech notified');
+}
+
+// hold-to-pay
+function startHold(){
+  holdVal=0;
+  holdTimer=setInterval(()=>{
+    holdVal+=6;document.getElementById('holdfill').style.width=holdVal+'%';
+    if(holdVal>=100){cancelHold();payDone();}
+  },45);
+}
+function cancelHold(){ if(holdTimer){clearInterval(holdTimer);holdTimer=null;} if(holdVal<100){document.getElementById('holdfill').style.width='0';holdVal=0;} }
+function payDone(){
+  document.getElementById('pay-pre').style.display='none';
+  document.getElementById('pay-done').style.display='flex';
+  document.getElementById('pay-done').style.flexDirection='column';
+  document.getElementById('pay-done').style.flex='1';
+  toast('Paid · receipt sent');
+}
+</script>
+</body>
+</html>

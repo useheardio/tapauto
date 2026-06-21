@@ -292,6 +292,12 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
         <div class="cell"><div class="k">Oil type</div><div class="v" id="acct-oil">0W-20 Syn</div></div>
         <div class="cell"><div class="k">Mileage</div><div class="v" id="acct-miles">42,180</div></div>
       </div>
+      <button class="dbtn dark" style="margin-top:12px;font-size:.86rem;padding:11px" onclick="openOdo()">Update my odometer</button>
+      <div id="odo-edit" style="display:none;background:var(--ink-2);border:1px solid var(--on-line);border-radius:14px;padding:14px;margin-top:10px">
+        <div style="font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--on-mut);margin-bottom:8px">Current odometer reading</div>
+        <input id="odo-in" type="number" inputmode="numeric" style="width:100%;background:#16161b;border:1px solid var(--on-line);border-radius:11px;color:var(--on);padding:12px 14px;font-family:'Inter';font-size:1.05rem;outline:none" />
+        <button class="dbtn" style="margin-top:10px" onclick="saveOdo()">Save and recheck my score</button>
+      </div>
       <div class="label">Service history</div>
       <div>
         <div class="histrow"><span>Full synthetic oil change</span><span class="dt">Mar 2</span></div>
@@ -670,11 +676,30 @@ function renderHealth(){
 }
 function drive(){ var since=((state.miles!=null)?state.miles:car.since)+500; state.miles=since; save(state); renderHealth(); closeSheet(); var h=computeHealth(since,car.interval); toast(h.over>0?("Drove 500 miles · oil now "+h.over+" mi overdue"):"Drove 500 miles · oil window closing"); }
 function restoreOil(){ state.miles=0; save(state); renderHealth(); closeSheet(); toast("Oil changed · health score restored to 100"); }
+function lastOdo(){ return parseInt(String(car.miles).replace(/[^0-9]/g,""))||40000; }
+function openOdo(){ var e=document.getElementById("odo-edit"); var show=e.style.display==="none"; e.style.display=show?"block":"none"; if(show){ document.getElementById("odo-in").value=lastOdo()+((state.miles!=null)?state.miles:car.since); document.getElementById("odo-in").focus(); } }
+function saveOdo(){ var cur=parseInt(document.getElementById("odo-in").value)||0; var since=Math.max(0,cur-lastOdo()); state.miles=since; save(state); renderHealth(); document.getElementById("odo-edit").style.display="none"; var h=computeHealth(since,car.interval); toast(h.over>0?("Updated · oil is "+h.over+" mi overdue"):"Updated · you are in good shape"); }
+
+// ---------- live data from the database (real tag) ----------
+async function loadTagData(){
+  var t=params.get("t")||params.get("token"); if(!t) return;
+  try{
+    var r=await fetch("/api/tap?token="+encodeURIComponent(t)); if(!r.ok) return;
+    var d=await r.json(); if(!d||!d.found||!d.vehicle) return;
+    var v=d.vehicle, nm=[v.year,v.make,v.model].filter(Boolean).join(" ");
+    car={name:nm||car.name,oil:car.oil,miles:(d.last_service_mileage!=null?Number(d.last_service_mileage).toLocaleString():car.miles),due:car.due,interval:d.interval_miles||5000,since:(state.miles!=null?state.miles:0)};
+    renderCar(); renderHealth();
+    var sec=document.getElementById("secure"); if(sec){ sec.classList.add("show"); setTxt("secure-txt","Live"); }
+    var ck=document.getElementById("clip-v"); if(ck&&nm) ck.textContent=nm;
+    toast("Loaded live from the database");
+  }catch(e){}
+}
 
 // ---------- init ----------
 renderCar(); renderCard(); renderSecure(); renderHealth(); route();
 if(state.saved){ go("account"); } else { go("tap"); }
 showClip();
+loadTagData();
 </script>
 </body>
 </html>
