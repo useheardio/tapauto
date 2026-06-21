@@ -153,6 +153,7 @@ input{font-family:inherit}
 .bnames{display:flex;flex-wrap:wrap;gap:6px;margin-top:13px}
 .bname{background:var(--surface-2);border:1px solid var(--line);border-radius:20px;padding:5px 11px;font-size:.8rem;font-weight:600}
 .bucket .send{margin-top:15px}
+.joptin{font-family:"Space Mono",monospace;font-size:.62rem;letter-spacing:.06em;color:var(--muted-2);margin-top:13px}
 
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:13px 20px;border-radius:100px;font-size:.86rem;z-index:90;opacity:0;transition:.4s var(--ease);box-shadow:var(--shadow-lg);max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -350,7 +351,7 @@ input{font-family:inherit}
     </div>
     <div class="actrow">
       <button class="actbtn" onclick="toast('Approval pushed to the customer phone')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>Push a service</button>
-      <button class="actbtn" onclick="toast('Charged $63.40 to Visa on file · receipt sent')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>Collect payment</button>
+      <button class="actbtn" onclick="collectPayment()"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>Collect payment</button>
       <button class="actbtn" onclick="logCurrent()"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 4v4h4"/></svg></span>Log a service</button>
       <button class="actbtn" onclick="toast('Opened the customer view of their app')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></span>View their app</button>
     </div>
@@ -490,9 +491,9 @@ var ALL=[
   {nm:"Lena Kowalski",car:"2017 Subaru Outback",plate:"OBK-1140",init:"LK",score:28,status:"Service now",meta:"90+ days"}
 ];
 var BUCKETS=[
-  {cls:"b1",num:38,t:"Just serviced",d:"Visited in the last 30 days. Thank them and ask for a Google review while they are happy.",offer:"Tap app shows: a thank-you and a one-tap review link",names:["Marcus R.","Dana W.","Owen P.","Grace L."],btn:"Send thank-you + review request",done:"Thanked 38 customers · review links sent"},
-  {cls:"b2",num:24,t:"Coming due",d:"Inside the oil window and getting close. A gentle nudge now captures the next visit.",offer:"Tap app shows: a $15-off oil change, book in two taps",names:["Priya N.","Owen P.","Maria S."],btn:"Send booking nudge",done:"Nudged 24 customers · $15 offer live on their app"},
-  {cls:"b3",num:17,t:"Overdue, drifting",d:"Past due and at risk of going elsewhere. Hit them harder to win them back.",offer:"Tap app shows: a $25-off win-back, plus the health-score warning",names:["Sam O.","Terrence B.","Lena K."],btn:"Send win-back offer",done:"Win-back sent to 17 · $25 offer live on their app"}
+  {cls:"b1",kind:"thanks",t:"Just serviced",d:"Serviced in the last 30 days. Thank them and ask for a review while they're happy.",offerLine:"Their app shows a thank-you and a one-tap review link.",offerTitle:"Thanks for visiting. Tap to leave a quick review.",cents:0,code:"REVIEW",btn:"Send thank-you + review"},
+  {cls:"b2",kind:"due",t:"Coming due",d:"Inside the oil window and getting close. A nudge now captures the next visit.",offerLine:"Their app shows $15 off the next oil change.",offerTitle:"$15 off your next oil change",cents:1500,code:"OIL15",btn:"Send booking nudge"},
+  {cls:"b3",kind:"winback",t:"Overdue, drifting",d:"Past due and at risk of going elsewhere. Hit harder to win them back.",offerLine:"Their app shows $25 off plus the health-score warning.",offerTitle:"We want you back: $25 off your oil change",cents:2500,code:"BACK25",btn:"Send win-back offer"}
 ];
 
 function el(id){return document.getElementById(id);}
@@ -700,7 +701,7 @@ function renderCustomers(){
 }
 function ensureKeys(arr){ arr.forEach(function(c){ if(!c.key) c.key=c.init; }); return arr; }
 async function loadCustomers(){
-  if(!window.SHOP_ID||!supaClient){ DBALL=null; ensureKeys(ALL); renderLive(); renderCustomers(); return; }
+  if(!window.SHOP_ID||!supaClient){ DBALL=null; ensureKeys(ALL); renderLive(); renderCustomers(); renderBuckets(); return; }
   try{
     var vq=await supaClient.from("vehicles")
       .select("id,year,make,model,plate,oil_type,interval_miles,last_service_mileage,last_service_at,vehicle_ownership(active,customers(id,name,phone,email,consent_sms,consent_email))")
@@ -719,8 +720,8 @@ async function loadCustomers(){
         consentSms:!!(cust&&cust.consent_sms), consentEmail:!!(cust&&cust.consent_email),
         last_service_mileage:v.last_service_mileage, dt:v.last_service_at };
     });
-    renderLive(); renderCustomers();
-  }catch(e){ DBALL=null; ensureKeys(ALL); renderLive(); renderCustomers(); }
+    renderLive(); renderCustomers(); renderBuckets();
+  }catch(e){ DBALL=null; ensureKeys(ALL); renderLive(); renderCustomers(); renderBuckets(); }
 }
 var CUR=null;
 function openCust(key){
@@ -756,17 +757,61 @@ async function loadHistory(c){
 function closeCust(){ el("cust").classList.remove("on"); }
 
 /* ---------- journey ---------- */
+function shortName(nm){ var p=(nm||"Driver").trim().split(" "); return p[0]+(p[1]?(" "+p[1][0]+"."):""); }
+function bucketOf(c){
+  if(c.dt && (Date.now()-new Date(c.dt).getTime())/86400000 <= 30) return 0; // just serviced
+  if(c.score < 55) return 2;  // overdue
+  if(c.score < 80) return 1;  // coming due
+  return -1;                  // healthy, no campaign
+}
+function bucketMembers(i){ return allList().filter(function(c){return bucketOf(c)===i;}); }
 function renderBuckets(){
   el("buckets").innerHTML=BUCKETS.map(function(b,i){
-    return '<div class="bucket '+b.cls+'"><div class="bh"><div class="bnum">'+b.num+'</div>'+
+    var mem=bucketMembers(i);
+    var optIn=mem.filter(function(c){return c.email&&c.consentEmail;}).length;
+    var names=mem.slice(0,4).map(function(c){return '<span class="bname">'+shortName(c.nm)+'</span>';}).join("");
+    var more=mem.length>4?('<span class="bname" style="color:var(--muted)">+'+(mem.length-4)+' more</span>'):"";
+    return '<div class="bucket '+b.cls+'"><div class="bh"><div class="bnum">'+mem.length+'</div>'+
       '<div><div class="bt">'+b.t+'</div><div class="bd">'+b.d+'</div></div></div>'+
-      '<div class="offer">🎯 <span>'+b.offer+'</span></div>'+
-      '<div class="bnames">'+b.names.map(function(n){return '<span class="bname">'+n+'</span>';}).join("")+
-      '<span class="bname" style="color:var(--muted)">+'+(b.num-b.names.length)+' more</span></div>'+
-      '<button class="cta send" onclick="sendBucket('+i+')">'+b.btn+' ('+b.num+')</button></div>';
+      '<div class="offer">🎯 <span>'+b.offerLine+'</span></div>'+
+      (mem.length?('<div class="bnames">'+names+more+'</div>'):'<p class="sub" style="margin-top:12px">No one in this bucket right now.</p>')+
+      '<div class="joptin">'+optIn+' of '+mem.length+' opted in to email</div>'+
+      '<button class="cta send" onclick="sendBucket('+i+')"'+(mem.length?"":" disabled")+'>'+b.btn+' ('+mem.length+')</button></div>';
   }).join("");
 }
-function sendBucket(i){ toast(BUCKETS[i].done); }
+async function ensureOffer(kind,title,cents,code){
+  try{
+    var q=await supaClient.from("offers").select("id").eq("shop_id",window.SHOP_ID).eq("kind",kind).eq("active",true).limit(1).maybeSingle();
+    if(q.data) return q.data.id;
+    var ins=await supaClient.from("offers").insert({shop_id:window.SHOP_ID,kind:kind,title:title,value_cents:cents||null,code:code||null,active:true}).select("id").single();
+    return ins.data?ins.data.id:null;
+  }catch(e){ return null; }
+}
+async function setVehicleOffers(vids,offerId){
+  if(!vids.length||!offerId) return;
+  try{ await supaClient.from("vehicle_offers").insert(vids.map(function(v){return {shop_id:window.SHOP_ID,vehicle_id:v,offer_id:offerId,active:true};})); }catch(e){}
+}
+async function sendJourneyEmails(b,recip){
+  if(!recip.length) return {configured:false,sent:0,wouldSend:0};
+  try{
+    var sess=(await supaClient.auth.getSession()).data.session; var tok=sess?sess.access_token:"";
+    var r=await fetch("/api/send-journey",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+tok},body:JSON.stringify({bucket:b.kind,subject:b.t,offerTitle:b.offerTitle,recipients:recip.map(function(c){return {email:c.email,name:c.nm};})})});
+    return await r.json();
+  }catch(e){ return {configured:false,error:String(e)}; }
+}
+async function sendBucket(i){
+  var b=BUCKETS[i], mem=bucketMembers(i);
+  if(!mem.length){ toast("No one in this bucket"); return; }
+  if(!window.SHOP_ID||!supaClient){ toast(b.btn+" (demo)"); return; }
+  toast("Updating offers...");
+  var offerId=await ensureOffer(b.kind,b.offerTitle,b.cents,b.code);
+  if(offerId){ await setVehicleOffers(mem.map(function(m){return m.vid;}).filter(Boolean), offerId); }
+  var recip=mem.filter(function(c){return c.email&&c.consentEmail;});
+  var em=await sendJourneyEmails(b,recip);
+  if(em&&em.configured===false){ toast("Offers updated for "+mem.length+". Email goes live when Resend is connected."); }
+  else if(em&&em.sent!=null){ toast("Sent "+em.sent+" emails · offers updated for "+mem.length+"."); }
+  else { toast("Offers updated for "+mem.length+"."); }
+}
 
 /* ---------- flows ---------- */
 var logVid=null, logCid=null;
@@ -970,6 +1015,19 @@ async function finishLog(){
   } else {
     el("done-sub").textContent="Service logged. Health restored."; toast("Service logged");
   }
+}
+
+/* ---------- payments (skeleton, lights up when Stripe keys are set) ---------- */
+async function collectPayment(){
+  if(!window.SHOP_ID||!supaClient){ toast("Sign in to take payment"); return; }
+  toast("Checking payments...");
+  try{
+    var r=await fetch("/api/stripe/payment-intent",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({amountCents:6340})});
+    var d=await r.json();
+    if(d.configured===false){ toast("Payments aren't connected yet. Add your Stripe keys to go live."); return; }
+    if(d.error){ toast("Payment error: "+d.error); return; }
+    toast("Payment ready ("+(d.status||"created")+"). Card capture screen comes next.");
+  }catch(e){ toast("Payments not reachable yet"); }
 }
 
 /* ---------- init ---------- */
