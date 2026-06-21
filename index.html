@@ -379,7 +379,7 @@ function revealCard(){ el("idle").classList.add("hide"); el("card").classList.ad
 function hideCard(){ el("card").classList.remove("show"); el("idle").classList.remove("hide"); el("ring-arc").setAttribute("stroke-dashoffset","314.16"); el("demo-cap").textContent="Go on, tap it"; }
 
 /* roi calculator */
-var COST_YR=129*12, TAPAUTO=61;
+var COST_YR=299*12, TAPAUTO=61;
 var disp={rev:0,vis:0,pay:0}, raf=0;
 function roi(){
   var cars=+el("s-cars").value, ticket=+el("s-ticket").value, rebook=+el("s-rebook").value;
@@ -423,8 +423,8 @@ var FEATS=[
   [["M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-7"],"Tap analytics & multi-location","See who's tapping, who's due, and who's drifting, across every bay and location, in one calm dashboard."]
 ];
 var PLANS=[
-  {name:"Starter",price:"$49",per:"/mo",desc:"One bay, getting the basics right.",feats:["Up to 200 tags","Tap-to-book","Service records","Email reminders"],feat:false},
-  {name:"Growth",price:"$129",per:"/mo",desc:"The full loop for a busy single shop.",feats:["Unlimited tags","Car Health Score","Mid-service approvals","Journey automations","Review capture"],feat:true},
+  {name:"Starter",price:"$149",per:"/mo",desc:"One bay, getting the basics right.",feats:["Up to 200 tags","Tap-to-book","Service records","Email reminders"],feat:false},
+  {name:"Growth",price:"$299",per:"/mo",desc:"The full loop for a busy single shop.",feats:["Unlimited tags","Car Health Score","Mid-service approvals","Journey automations","Review capture"],feat:true},
   {name:"Multi-location",price:"Custom",per:"",desc:"Every bay, every site, one view.",feats:["Everything in Growth","Multi-location dashboard","Tap analytics","Priority support"],feat:false}
 ];
 function check(){return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>';}
