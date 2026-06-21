@@ -27,7 +27,7 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{font-family:"Hanken Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased;background:var(--bg)}
-h1,h2,h3,h4{font-family:"Newsreader",Georgia,serif;letter-spacing:-.02em;line-height:1.08}
+h1,h2,h3,h4{font-family:"Newsreader",Georgia,serif;font-weight:600;letter-spacing:-.015em;line-height:1.08}
 .mono{font-family:"Space Mono",monospace}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 
@@ -54,10 +54,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .spacer{flex:1;min-height:14px}
 .eyebrow2{font-family:"Space Mono",monospace;font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;color:var(--on-mut)}
 .lede{color:var(--on-mut);font-size:.92rem;margin-top:8px}
-.carname{font-family:"Newsreader",Georgia,serif;font-weight:800;font-size:2rem;letter-spacing:-.03em;margin-top:6px}
-.due{background:linear-gradient(155deg,rgba(63,107,90,.14),rgba(63,107,90,.03));border:1px solid rgba(63,107,90,.30);border-radius:18px;padding:18px;margin-top:18px}
-.due .k{font-family:"Space Mono",monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
-.due .v{font-family:"Newsreader",Georgia,serif;font-weight:800;font-size:1.7rem;margin-top:4px}
+.carname{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:2rem;letter-spacing:-.015em;margin-top:6px}
+.due{background:var(--accent-tint);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:18px}
+.due .k{font-family:"Space Mono",monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-deep)}
+.due .v{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:1.7rem;letter-spacing:-.015em;margin-top:4px}
 .due .v small{font-size:.82rem;color:var(--on-mut);font-weight:500}
 .due .bar{height:7px;border-radius:7px;background:rgba(40,44,36,.10);margin-top:14px;overflow:hidden}
 .due .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-soft))}
@@ -69,7 +69,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .histrow{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--on-line);font-size:.88rem}
 .histrow:last-child{border-bottom:none}
 .histrow .dt{color:var(--on-mut);font-family:"Space Mono",monospace;font-size:.74rem}
-.coupon{display:flex;align-items:center;gap:10px;border:1px dashed rgba(40,44,36,.24);border-radius:13px;padding:12px 14px;font-size:.85rem;color:var(--on-mut);margin-top:16px}
+.coupon{display:flex;align-items:center;gap:10px;border:1px dashed var(--accent-soft);border-radius:13px;padding:12px 14px;font-size:.85rem;color:var(--on-mut);margin-top:16px}
 .coupon b{color:var(--on)}
 .card-on-file{display:flex;align-items:center;gap:11px;background:var(--ink-2);border:1px solid var(--on-line);border-radius:14px;padding:14px;font-size:.88rem;margin-top:16px}
 .visa{font-family:"Space Mono",monospace;font-weight:700;font-size:.72rem;background:#1d4ed8;color:#fff;padding:4px 8px;border-radius:5px}
@@ -80,12 +80,15 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .field input{width:100%;background:var(--ink-2);border:1px solid var(--on-line);border-radius:14px;color:var(--on);padding:15px 16px;font-family:"Hanken Grotesk";font-size:1.05rem;outline:none;transition:.25s}
 .field input:focus{border-color:var(--accent)}
 .otp{display:flex;gap:10px;justify-content:center;margin:18px 0 6px}
-.otp span{width:54px;height:64px;border-radius:14px;background:var(--ink-2);border:1px solid var(--on-line);display:grid;place-items:center;font-family:"Newsreader",Georgia,serif;font-weight:800;font-size:1.6rem}
+.otp span{width:54px;height:64px;border-radius:14px;background:var(--ink-2);border:1px solid var(--on-line);display:grid;place-items:center;font-family:"Newsreader",Georgia,serif;font-weight:600;letter-spacing:-.015em;font-size:1.6rem}
 .otp span.fill{border-color:var(--accent);color:var(--accent)}
 .cta{margin-top:16px;background:var(--accent);color:var(--on-accent);text-align:center;font-family:"Hanken Grotesk";font-weight:700;font-size:1.02rem;padding:16px;border-radius:16px;width:100%;transition:.25s var(--ease)}
 .cta:active{transform:scale(.985)}
 .cta.ghost{background:transparent;border:1px solid var(--on-line);color:var(--on)}
 .cta.dark{background:var(--ink-2);border:1px solid var(--on-line);color:var(--on)}
+.dbtn{display:block;width:100%;text-align:center;background:var(--accent);color:var(--on-accent);font-family:"Hanken Grotesk";font-weight:700;font-size:1.02rem;padding:16px;border-radius:16px;transition:.25s var(--ease)}
+.dbtn:active{transform:scale(.985)}
+.dbtn.dark{background:var(--ink-2);border:1px solid var(--on-line);color:var(--on)}
 .cta-row{display:flex;flex-direction:column;gap:10px}
 .footnote{text-align:center;color:var(--on-mut);font-family:"Space Mono",monospace;font-size:.62rem;letter-spacing:.08em;margin-top:16px}
 .center{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;margin:auto 0}
@@ -93,18 +96,19 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .bigcheck{width:78px;height:78px;border-radius:50%;background:var(--ok);display:grid;place-items:center;color:var(--on-accent);margin-bottom:6px}
 .brandrow{display:flex;align-items:center;justify-content:space-between}
 .brandrow .who{font-family:"Space Mono",monospace;font-size:.72rem;color:var(--on-mut)}
-.big-amt{font-family:"Newsreader",Georgia,serif;font-weight:800;font-size:3.2rem;letter-spacing:-.03em;text-align:center;margin:8px 0}
-.hold{position:relative;background:var(--accent);color:var(--on-accent);text-align:center;font-family:"Hanken Grotesk";font-weight:700;font-size:1.02rem;padding:18px;border-radius:18px;overflow:hidden;user-select:none}
+.big-amt{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:3.2rem;letter-spacing:-.02em;text-align:center;margin:8px 0}
+.hold{position:relative;background:var(--accent);color:var(--on-accent);text-align:center;font-family:"Hanken Grotesk";font-weight:700;font-size:1.02rem;padding:18px;border-radius:16px;overflow:hidden;user-select:none;transition:.25s var(--ease)}
+.hold:active{transform:scale(.985)}
 .hold .fill{position:absolute;inset:0;background:rgba(0,0,0,.2);width:0}
 
 /* ===================== Car Health Score ===================== */
 .health{display:flex;align-items:center;gap:18px;background:var(--ink-2);border:1px solid var(--on-line);border-radius:18px;padding:16px 18px;margin-top:16px}
 .hs-ring-wrap{position:relative;width:96px;height:96px;flex:0 0 auto}
 .hs-svg{width:96px;height:96px;transform:rotate(-90deg)}
-.hs-track{fill:none;stroke:rgba(40,44,36,.10);stroke-width:9}
+.hs-track{fill:none;stroke:var(--accent-tint);stroke-width:9}
 .hs-arc{fill:none;stroke:var(--ok);stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .6s var(--ease),stroke .4s}
 .hs-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.hs-num{font-family:"Newsreader",Georgia,serif;font-weight:800;font-size:1.9rem;line-height:1}
+.hs-num{font-family:"Newsreader",Georgia,serif;font-weight:600;letter-spacing:-.015em;font-size:1.9rem;line-height:1}
 .hs-of{font-family:"Space Mono",monospace;font-size:.52rem;color:var(--on-mut);margin-top:2px}
 .hs-side{flex:1;min-width:0}
 .hs-label{font-family:"Space Mono",monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--on-mut)}
@@ -122,7 +126,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .clip-hero{margin:14px 14px 0;border-radius:18px;background:linear-gradient(150deg,var(--surface-2),var(--bg-tint));border:1px solid var(--line);padding:18px 18px 20px;position:relative;overflow:hidden}
 .clip-hero .glyph{position:absolute;right:-14px;top:-18px;color:var(--accent);opacity:.16}
 .clip-hero .k{font-family:"Space Mono",monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);position:relative}
-.clip-hero .v{font-family:"Newsreader",Georgia,serif;font-weight:800;font-size:1.3rem;margin-top:6px;position:relative}
+.clip-hero .v{font-family:"Newsreader",Georgia,serif;font-weight:600;letter-spacing:-.015em;font-size:1.3rem;margin-top:6px;position:relative}
 .clip-hero .s{color:var(--muted);font-size:.82rem;margin-top:5px;position:relative}
 .clip-row{display:flex;align-items:center;gap:13px;padding:16px 16px 6px}
 .clip-icon{width:54px;height:54px;border-radius:14px;background:var(--accent);display:grid;place-items:center;flex:0 0 auto;box-shadow:0 8px 22px -8px rgba(63,107,90,.7)}
@@ -180,7 +184,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .an-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .an{background:var(--surface-2);border:1px solid var(--line);border-radius:15px;padding:20px}
 .an .k{font-family:"Space Mono",monospace;font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2)}
-.an .v{font-family:"Newsreader",Georgia,serif;font-weight:800;font-size:2rem;letter-spacing:-.03em;margin-top:8px}
+.an .v{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:2rem;letter-spacing:-.015em;margin-top:8px}
 .an .v .u{color:var(--accent);font-size:1.3rem}
 .an .t{font-size:.78rem;color:var(--ok-d);margin-top:6px;font-weight:600}
 .rec-hd{display:flex;align-items:center;gap:16px;margin-bottom:20px}
@@ -356,7 +360,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
         </div>
         <h2>Quick approval</h2>
         <p>Your wiper blades are worn and won't pass inspection. Want us to swap them while you're here?</p>
-        <div style="font-family:'Newsreader',Georgia,serif;font-weight:800;font-size:2rem;margin-top:6px">$14.00</div>
+        <div style="font-family:'Newsreader',Georgia,serif;font-weight:600;letter-spacing:-.015em;font-size:2rem;margin-top:6px">$14.00</div>
       </div>
       <div class="center" id="appr-post" style="display:none">
         <div class="bigcheck"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
@@ -458,7 +462,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 
     <div class="stab" id="st-customers">
       <h2>Customer record</h2><div class="sub">Everything tied to the vehicle, not just the visit</div>
-      <div class="rec-hd"><div class="avatar">MR</div><div><div style="font-family:'Newsreader',Georgia,serif;font-weight:700;font-size:1.3rem">Marcus Reyes</div><div class="sub" style="margin:0">2021 Toyota RAV4 · plate KRT-4471 · Visa ···· 6411 on file</div></div></div>
+      <div class="rec-hd"><div class="avatar">MR</div><div><div style="font-family:'Newsreader',Georgia,serif;font-weight:600;letter-spacing:-.015em;font-size:1.3rem">Marcus Reyes</div><div class="sub" style="margin:0">2021 Toyota RAV4 · plate KRT-4471 · Visa ···· 6411 on file</div></div></div>
       <div class="rec-grid">
         <div class="kpi"><div class="k">Visits</div><div class="v">4</div></div>
         <div class="kpi"><div class="k">Lifetime</div><div class="v">$312</div></div>
