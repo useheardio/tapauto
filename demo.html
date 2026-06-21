@@ -95,6 +95,29 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .hold{position:relative;background:var(--accent);color:#fff;text-align:center;font-family:"Sora";font-weight:700;font-size:1.02rem;padding:18px;border-radius:18px;overflow:hidden;user-select:none}
 .hold .fill{position:absolute;inset:0;background:rgba(0,0,0,.2);width:0}
 
+/* ===================== App Clip card ===================== */
+#clipbg{position:absolute;inset:0;z-index:60;background:rgba(8,8,10,.5);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);opacity:0;transition:.45s var(--ease);pointer-events:none}
+#clipbg.show{opacity:1;pointer-events:auto}
+#clipcard{position:absolute;left:10px;right:10px;bottom:10px;z-index:61;background:#1c1c20;color:var(--on);border-radius:28px;overflow:hidden;transform:translateY(120%);transition:transform .52s var(--ease),opacity .4s var(--ease);box-shadow:0 -12px 60px rgba(0,0,0,.55),0 0 0 1px var(--on-line)}
+#clipcard.show{transform:translateY(0)}
+#clipcard.opening{transform:translateY(-122%);opacity:0}
+.clip-grab{width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.22);margin:10px auto 2px}
+.clip-hero{margin:14px 14px 0;border-radius:18px;background:linear-gradient(150deg,#26262d,#121216);border:1px solid var(--on-line);padding:18px 18px 20px;position:relative;overflow:hidden}
+.clip-hero .glyph{position:absolute;right:-14px;top:-18px;color:var(--accent);opacity:.16}
+.clip-hero .k{font-family:"Space Mono",monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-soft);position:relative}
+.clip-hero .v{font-family:"Sora";font-weight:800;font-size:1.3rem;margin-top:6px;position:relative}
+.clip-hero .s{color:var(--on-mut);font-size:.82rem;margin-top:5px;position:relative}
+.clip-row{display:flex;align-items:center;gap:13px;padding:16px 16px 6px}
+.clip-icon{width:54px;height:54px;border-radius:14px;background:var(--accent);display:grid;place-items:center;flex:0 0 auto;box-shadow:0 8px 22px -8px rgba(224,87,30,.7)}
+.clip-icon svg{width:30px;height:30px}
+.clip-meta{flex:1;min-width:0}
+.clip-meta .t{font-family:"Sora";font-weight:700;font-size:1.04rem}
+.clip-meta .u{font-size:.78rem;color:var(--on-mut);margin-top:1px}
+.clip-open{background:#0a84ff;color:#fff;font-family:"Sora";font-weight:700;font-size:.92rem;padding:9px 24px;border-radius:100px;flex:0 0 auto;transition:.2s}
+.clip-open:active{transform:scale(.95)}
+.clip-foot{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 16px 18px;font-size:.72rem;color:var(--on-mut)}
+.clip-foot .badge{font-family:"Space Mono",monospace;font-size:.55rem;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--on-line);border-radius:20px;padding:3px 8px}
+
 /* ===================== SHOP (light) ===================== */
 #shop{display:none;min-height:100vh;background:var(--bg);color:var(--text)}
 #shop.on{display:block}
@@ -324,6 +347,24 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       </div>
     </div>
   </div>
+
+  <!-- App Clip card overlay -->
+  <div id="clipbg" onclick="openClip()"></div>
+  <div id="clipcard">
+    <div class="clip-grab"></div>
+    <div class="clip-hero">
+      <span class="glyph"><svg width="132" height="132" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a13 13 0 0 1 0 12M13 4a18 18 0 0 1 0 16"/></svg></span>
+      <div class="k" id="clip-k">You tapped this car's tag</div>
+      <div class="v" id="clip-v">2021 Toyota RAV4</div>
+      <div class="s" id="clip-s">Likely due for an oil change in ~3 weeks</div>
+    </div>
+    <div class="clip-row">
+      <div class="clip-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a13 13 0 0 1 0 12M13 4a18 18 0 0 1 0 16" stroke="#fff" stroke-width="2"/></svg></div>
+      <div class="clip-meta"><div class="t">Sir Walter Quick Lube</div><div class="u">Tap Auto · tapauto.com</div></div>
+      <button class="clip-open" onclick="openClip()">Open</button>
+    </div>
+    <div class="clip-foot"><span class="badge">App Clip</span><span>Only the part you need · no download</span></div>
+  </div>
 </div>
 
 <!-- ===================== SHOP ===================== -->
@@ -409,6 +450,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <button class="row" onclick="closeSheet();go('approve');resetApproval()"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>A tech sent an approval</button>
   <button class="row" onclick="closeSheet();go('pay')"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>Service complete, go to pay</button>
   <div class="dh">Navigate</div>
+  <button class="row" onclick="closeSheet();showClip()"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a13 13 0 0 1 0 12M13 4a18 18 0 0 1 0 16"/></svg></span>Replay the tap card</button>
   <button class="row" onclick="closeSheet();go('account')"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg></span>My account home</button>
   <button class="row" onclick="closeSheet();location.hash='shop'"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Open shop dashboard</button>
   <div class="dh">Reset</div>
@@ -513,10 +555,27 @@ function payDone(){ document.getElementById("pay-pre").style.display="none"; doc
 // ---------- sheet ----------
 function openSheet(){ document.getElementById("sheet").classList.add("show"); document.getElementById("sheet-bg").classList.add("show"); }
 function closeSheet(){ document.getElementById("sheet").classList.remove("show"); document.getElementById("sheet-bg").classList.remove("show"); }
-function resetDemo(){ try{localStorage.removeItem(STORE_KEY);}catch(e){} window.__mem={}; state={}; closeSheet(); renderCard(); go("tap"); toast("Reset · you're a stranger again"); }
+function resetDemo(){ try{localStorage.removeItem(STORE_KEY);}catch(e){} window.__mem={}; state={}; closeSheet(); renderCard(); go("tap"); showClip(); toast("Reset · you're a stranger again"); }
 
 // ---------- toast ----------
 function toast(m){ var t=document.getElementById("toast"); document.getElementById("toast-msg").textContent=m; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(function(){t.classList.remove("show");},2600); }
+
+// ---------- App Clip card ----------
+function showClip(){
+  var saved=state.saved;
+  document.getElementById("clip-k").textContent=saved?"Welcome back":"You tapped this car's tag";
+  document.getElementById("clip-v").textContent=saved?(state.name?("Hi, "+state.name):car.name):car.name;
+  document.getElementById("clip-s").textContent=saved?(car.name+" · tap Open for your account and history"):("Likely due for an oil change in "+car.due);
+  var c=document.getElementById("clipcard"),bg=document.getElementById("clipbg");
+  c.style.transition="none"; c.classList.remove("opening","show"); void c.offsetWidth; c.style.transition="";
+  bg.classList.add("show");
+  requestAnimationFrame(function(){ c.classList.add("show"); });
+}
+function openClip(){
+  var c=document.getElementById("clipcard"),bg=document.getElementById("clipbg");
+  c.classList.remove("show"); c.classList.add("opening"); bg.classList.remove("show");
+  if(state.saved&&state.name) toast("Welcome back, "+state.name);
+}
 
 // ---------- shop ----------
 function stab(t){ document.querySelectorAll(".stab").forEach(function(x){x.classList.toggle("on",x.id==="st-"+t);}); document.querySelectorAll(".stabs button").forEach(function(b){b.classList.toggle("on",b.dataset.t===t);}); }
@@ -542,8 +601,8 @@ window.addEventListener("hashchange",route);
 
 // ---------- init ----------
 renderCar(); renderCard(); renderSecure(); route();
-if(state.saved){ go("account"); if(state.name) toast("Welcome back, "+state.name); }
-else{ go("tap"); }
+if(state.saved){ go("account"); } else { go("tap"); }
+showClip();
 </script>
 </body>
 </html>
