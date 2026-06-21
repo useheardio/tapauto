@@ -66,6 +66,17 @@ input{font-family:inherit}
 .toggle::after{content:"";position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:var(--shadow);transition:.25s}
 .toggle.on{background:var(--accent);border-color:var(--accent)}.toggle.on::after{left:24px}
 
+/* ===== SETUP ===== */
+#setup{flex:1;display:none;flex-direction:column;padding:max(24px,env(safe-area-inset-top)) 24px calc(30px + env(safe-area-inset-bottom))}
+#setup.on{display:flex}
+.su-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:6px 0 22px;flex-wrap:wrap}
+.su-prog{display:flex;gap:7px}
+.su-prog .d{width:24px;height:5px;border-radius:5px;background:var(--bg-tint);border:1px solid var(--line);transition:.3s}
+.su-prog .d.on{background:var(--accent);border-color:var(--accent)}
+.su-body{flex:1;display:flex;flex-direction:column;justify-content:center}
+.sustep{display:none}.sustep.on{display:block;animation:suIn .35s var(--ease)}
+@keyframes suIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
 /* ===== APP SHELL ===== */
 #app{flex:1;display:none;flex-direction:column;min-height:100vh;min-height:100dvh}
 #app.on{display:flex}
@@ -108,8 +119,8 @@ input{font-family:inherit}
 .search{width:100%;background:var(--surface);border:1px solid var(--line-strong);border-radius:13px;padding:13px 15px;font-size:.95rem;outline:none;margin-bottom:14px;box-shadow:var(--shadow)}
 
 /* customer detail overlay */
-#cust{position:fixed;inset:0;z-index:40;background:var(--bg);transform:translateX(100%);transition:.4s var(--ease);overflow-y:auto;max-width:540px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))}
-#cust.on{transform:none}
+#cust{position:fixed;inset:0;z-index:40;background:var(--bg);transform:translateX(100%);opacity:0;visibility:hidden;pointer-events:none;transition:transform .4s var(--ease),opacity .3s var(--ease),visibility 0s linear .4s;overflow-y:auto;max-width:540px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))}
+#cust.on{transform:none;opacity:1;visibility:visible;pointer-events:auto;transition:transform .4s var(--ease),opacity .3s var(--ease),visibility 0s}
 .dhd{display:flex;align-items:center;gap:14px;margin:8px 0 18px}
 .dhd .av{width:56px;height:56px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-family:"Sora";font-weight:700;font-size:1.2rem;flex:0 0 auto}
 .dhd .nm{font-family:"Sora";font-weight:800;font-size:1.4rem}.dhd .car{color:var(--muted);font-size:.88rem;margin-top:2px}
@@ -207,10 +218,59 @@ input{font-family:inherit}
     </div>
   </div>
 
+  <!-- ================= SETUP / ONBOARDING ================= -->
+  <div id="setup">
+    <div class="su-head">
+      <div class="logo-lg" style="margin-bottom:0">
+        <span class="mk"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a13 13 0 0 1 0 12M13 4a18 18 0 0 1 0 16" stroke="#fff" stroke-width="2"/></svg></span>
+        <div><div class="t">Set up your shop</div><div class="s">Takes about a minute</div></div>
+      </div>
+      <div class="su-prog"><span class="d on"></span><span class="d"></span><span class="d"></span></div>
+    </div>
+
+    <div class="su-body">
+      <!-- Step 1: business -->
+      <div class="sustep on" id="su-1">
+        <span class="kicker">Step 1 of 3</span>
+        <h1 class="h">Your business</h1>
+        <p class="sub">This is the name customers see when they tap.</p>
+        <div class="field"><label>Business name</label><input id="su-shop" placeholder="Sir Walter Quick Lube" /></div>
+        <div class="field"><label>Street address</label><input id="su-shopaddr" placeholder="412 Glenwood Ave, Raleigh NC" /></div>
+        <div class="field"><label>Your name</label><input id="su-owner" placeholder="Jordan Webb" /></div>
+        <button class="cta" style="margin-top:22px" onclick="suNext(1)">Continue</button>
+      </div>
+
+      <!-- Step 2: location -->
+      <div class="sustep" id="su-2">
+        <button class="back" onclick="suGo(1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>Back</button>
+        <span class="kicker">Step 2 of 3</span>
+        <h1 class="h">Your service location</h1>
+        <p class="sub">The bay where cars come in. You can add more later.</p>
+        <div class="field"><label>Location name</label><input id="su-loc" placeholder="Main bay" /></div>
+        <div class="field"><label>Location address</label><input id="su-locaddr" placeholder="Same as business, or a second site" /></div>
+        <button class="cta" style="margin-top:22px" onclick="suNext(2)">Continue</button>
+      </div>
+
+      <!-- Step 3: defaults + first offer -->
+      <div class="sustep" id="su-3">
+        <button class="back" onclick="suGo(2)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>Back</button>
+        <span class="kicker">Step 3 of 3</span>
+        <h1 class="h">Defaults and first offer</h1>
+        <p class="sub">Sensible starting points. Every car can override these.</p>
+        <div class="field"><label>Default oil change interval</label><div class="chips" id="su-intchips"></div></div>
+        <div class="field"><label>Default oil type</label><div class="chips" id="su-oilchips"></div></div>
+        <div class="field"><label>First offer customers see (optional)</label><input id="su-offer" placeholder="$15 off your next oil change" /></div>
+        <div class="field"><label>Offer amount (optional)</label><input id="su-offerval" type="tel" placeholder="15" /></div>
+        <button class="cta" id="su-create" style="margin-top:22px" onclick="createShop(this)">Create my shop</button>
+        <div class="lock-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Your shop, your data. Locked to your account.</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= APP ================= -->
   <div id="app">
     <div class="topbar">
-      <div class="b"><span class="mk"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a13 13 0 0 1 0 12M13 4a18 18 0 0 1 0 16" stroke="#fff" stroke-width="2"/></svg></span><div>Sir Walter Quick Lube<div class="s">Tap Auto</div></div></div>
+      <div class="b"><span class="mk"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a13 13 0 0 1 0 12M13 4a18 18 0 0 1 0 16" stroke="#fff" stroke-width="2"/></svg></span><div><span id="shopname">Sir Walter Quick Lube</span><div class="s">Tap Auto</div></div></div>
       <div class="who"><span class="av">JD</span><button class="lo" onclick="logout()">Sign out</button></div>
     </div>
 
@@ -396,29 +456,83 @@ async function doLogin(btn){
   var res=await supaClient.auth.signInWithPassword({ email:email, password:pass });
   btn.textContent="Continue"; btn.disabled=false;
   if(res.error){ toast(res.error.message||"Sign in failed"); return; }
-  showApp();
+  gateApp();
 }
-function signIn(){ showApp(); } // legacy hook for the 2FA screen
-function logout(){ if(supaClient){ supaClient.auth.signOut(); } el("app").classList.remove("on"); el("login").classList.remove("hidden"); lstep("creds"); }
-async function showApp(){
-  el("login").classList.add("hidden"); el("app").classList.add("on");
-  renderLive(); renderCustomers(); renderBuckets(); tab("bay");
+function signIn(){ gateApp(); } // legacy hook for the 2FA screen
+function logout(){ if(supaClient){ supaClient.auth.signOut(); } el("app").classList.remove("on"); el("setup").classList.remove("on"); el("login").classList.remove("hidden"); lstep("creds"); }
+
+// after auth: a staff row -> the app, no staff row yet -> first-run setup
+async function gateApp(){
+  if(!supaClient){ await initSupa(); }
+  var staff=null;
   try{
     var u=(await supaClient.auth.getUser()).data.user;
-    if(u){
-      var st=await supaClient.from("staff").select("shop_id,name,role").eq("user_id",u.id).maybeSingle();
-      if(st.data){
-        window.SHOP_ID=st.data.shop_id;
-        var av=document.querySelector(".who .av");
-        if(av&&st.data.name){ av.textContent=st.data.name.split(" ").map(function(p){return p[0];}).join("").slice(0,2).toUpperCase(); }
-      } else { toast("This account is not linked to a shop yet"); }
-    }
+    if(u){ var st=await supaClient.from("staff").select("shop_id,name,role").eq("user_id",u.id).maybeSingle(); staff=st.data||null; }
   }catch(e){}
+  if(staff){ enterApp(staff); } else { showSetup(); }
+}
+async function enterApp(staff){
+  el("login").classList.add("hidden"); el("setup").classList.remove("on"); el("app").classList.add("on");
+  window.SHOP_ID=staff.shop_id;
+  var av=document.querySelector(".who .av");
+  if(av&&staff.name){ av.textContent=staff.name.split(" ").map(function(p){return p[0]||"";}).join("").slice(0,2).toUpperCase(); }
+  try{ var sh=await supaClient.from("shops").select("name").eq("id",staff.shop_id).maybeSingle();
+       if(sh.data&&sh.data.name){ var nmEl=el("shopname"); if(nmEl) nmEl.textContent=sh.data.name; } }catch(e){}
+  renderLive(); renderCustomers(); renderBuckets(); tab("bay");
 }
 async function boot(){
   await initSupa();
-  if(supaClient){ try{ var s=await supaClient.auth.getSession(); if(s.data&&s.data.session){ showApp(); return; } }catch(e){} }
+  if(supaClient){ try{ var s=await supaClient.auth.getSession(); if(s.data&&s.data.session){ gateApp(); return; } }catch(e){} }
   lstep("creds");
+}
+
+/* ---------- first-run setup ---------- */
+var SU={interval:5000, oil:"0W-20 Syn"};
+var INTS=[{l:"3,000 mi",v:3000},{l:"5,000 mi",v:5000},{l:"7,500 mi",v:7500},{l:"10,000 mi",v:10000}];
+function showSetup(){
+  el("login").classList.add("hidden"); el("app").classList.remove("on"); el("setup").classList.add("on");
+  buildSetupChips(); suGo(1);
+}
+function buildSetupChips(){
+  var ic=el("su-intchips"); ic.innerHTML="";
+  INTS.forEach(function(o){var b=document.createElement("button");b.className="chip"+(o.v===SU.interval?" on":"");b.textContent=o.l;b.onclick=function(){SU.interval=o.v;buildSetupChips();};ic.appendChild(b);});
+  var oc=el("su-oilchips"); oc.innerHTML="";
+  OILS.forEach(function(o){var b=document.createElement("button");b.className="chip"+(o===SU.oil?" on":"");b.textContent=o;b.onclick=function(){SU.oil=o;buildSetupChips();};oc.appendChild(b);});
+}
+function suProg(n){ document.querySelectorAll(".su-prog .d").forEach(function(d,i){d.classList.toggle("on",i<n);}); }
+function suGo(n){ document.querySelectorAll(".sustep").forEach(function(s){s.classList.toggle("on",s.id==="su-"+n);}); suProg(n); el("setup").scrollTop=0; }
+function suNext(n){
+  if(n===1){
+    if(!el("su-shop").value.trim()){ toast("Add your business name"); return; }
+    if(!el("su-owner").value.trim()){ toast("Add your name"); return; }
+  }
+  suGo(n+1);
+}
+async function createShop(btn){
+  var shop=el("su-shop").value.trim(), owner=el("su-owner").value.trim();
+  if(!shop||!owner){ toast("Business name and your name are required"); suGo(1); return; }
+  if(!supaClient){ await initSupa(); }
+  if(!supaClient){ toast("Auth not configured yet"); return; }
+  var offerTitle=el("su-offer").value.trim()||null;
+  var offerVal=parseInt((el("su-offerval").value||"").replace(/[^0-9]/g,""),10);
+  var args={
+    p_shop_name:shop,
+    p_shop_address:el("su-shopaddr").value.trim()||null,
+    p_owner_name:owner,
+    p_location_name:el("su-loc").value.trim()||"Main bay",
+    p_location_address:el("su-locaddr").value.trim()||el("su-shopaddr").value.trim()||null,
+    p_branding:{interval_miles:SU.interval, oil_type:SU.oil},
+    p_offer_title:offerTitle,
+    p_offer_code:offerTitle?"WELCOME":null,
+    p_offer_value_cents:(offerTitle&&!isNaN(offerVal))?offerVal*100:null
+  };
+  btn.textContent="Creating..."; btn.disabled=true;
+  var res=await supaClient.rpc("create_shop", args);
+  btn.textContent="Create my shop"; btn.disabled=false;
+  if(res.error){ toast(res.error.message||"Could not create shop"); return; }
+  INTERVAL=SU.interval;
+  toast("Shop created. Welcome aboard.");
+  gateApp();
 }
 
 /* ---------- tabs ---------- */
