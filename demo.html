@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1" />
+<title>Sir Walter Quick Lube · Tap Auto</title>
+<meta name="theme-color" content="#0b0b0e" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Tap Auto" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23E0571E'/><path d='M50 24a26 26 0 0 0-26 26 26 26 0 0 0 8 18l4-4a20 20 0 0 1-6-14 20 20 0 0 1 40 0 20 20 0 0 1-6 14l4 4a26 26 0 0 0 8-18 26 26 0 0 0-26-26z' fill='%23fff'/><circle cx='50' cy='50' r='8' fill='%23fff'/></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --accent:#E0571E;--accent-soft:#F06A30;--accent-deep:#B8420F;
+  --ink:#0b0b0e;--ink-2:#16161b;--ink-3:#1c1c22;--on:#F4F1EA;--on-mut:rgba(244,241,234,.6);--on-line:rgba(255,255,255,.1);
+  --ok:#3EBE74;--ease:cubic-bezier(.22,1,.36,1);
+  /* shop (light) */
+  --bg:#F4F2EC;--surface:#fff;--surface-2:#F8F6F1;--line:rgba(28,25,21,.1);--line-strong:rgba(28,25,21,.17);
+  --text:#1B1A18;--muted:#6A675F;--muted-2:#9A968C;--bg-tint:#ECE9E1;--ok-d:#3E8E5E;--warn:#C98A1B;--accent-tint:rgba(224,87,30,.09);
+  --shadow:0 1px 2px rgba(24,20,15,.04),0 12px 30px -16px rgba(24,20,15,.16);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:"Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased;background:#000}
+h1,h2,h3,h4{font-family:"Sora",sans-serif;letter-spacing:-.02em;line-height:1.08}
+.mono{font-family:"Space Mono",monospace}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+/* ===================== CUSTOMER APP (dark, full screen) ===================== */
+#app{max-width:460px;margin:0 auto;min-height:100vh;min-height:100dvh;background:var(--ink);color:var(--on);
+  position:relative;display:flex;flex-direction:column;overflow:hidden}
+#app.hidden{display:none}
+.appbar{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:max(14px,env(safe-area-inset-top)) 18px 12px;border-bottom:1px solid var(--on-line);position:relative;z-index:5}
+.appbar .shop{display:flex;align-items:center;gap:8px;font-family:"Sora";font-weight:700;font-size:.92rem}
+.appbar .shop .mk{width:22px;height:22px;border-radius:6px;background:var(--accent);display:grid;place-items:center}
+.appbar .shop .mk svg{width:13px;height:13px}
+.appbar .right{display:flex;align-items:center;gap:8px}
+.secure{display:none;align-items:center;gap:6px;font-family:"Space Mono",monospace;font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ok);background:rgba(62,190,116,.12);border:1px solid rgba(62,190,116,.28);padding:4px 8px;border-radius:20px}
+.secure.show{display:inline-flex}
+.gear{width:32px;height:32px;border-radius:50%;border:1px solid var(--on-line);display:grid;place-items:center;color:var(--on-mut)}
+.gear svg{width:16px;height:16px}
+
+.screens{flex:1;position:relative;overflow:hidden}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;padding:22px 20px calc(22px + env(safe-area-inset-bottom));
+  overflow-y:auto;opacity:0;transform:translateY(14px);pointer-events:none;transition:.42s var(--ease)}
+.screen.on{opacity:1;transform:none;pointer-events:auto}
+.spacer{flex:1;min-height:14px}
+.eyebrow2{font-family:"Space Mono",monospace;font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;color:var(--on-mut)}
+.lede{color:var(--on-mut);font-size:.92rem;margin-top:8px}
+.carname{font-family:"Sora";font-weight:800;font-size:2rem;letter-spacing:-.03em;margin-top:6px}
+.due{background:linear-gradient(155deg,rgba(224,87,30,.22),rgba(224,87,30,.04));border:1px solid rgba(224,87,30,.34);border-radius:18px;padding:18px;margin-top:18px}
+.due .k{font-family:"Space Mono",monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-soft)}
+.due .v{font-family:"Sora";font-weight:800;font-size:1.7rem;margin-top:4px}
+.due .v small{font-size:.82rem;color:var(--on-mut);font-weight:500}
+.due .bar{height:7px;border-radius:7px;background:rgba(255,255,255,.12);margin-top:14px;overflow:hidden}
+.due .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-soft))}
+.cells{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.cell{background:var(--ink-2);border:1px solid var(--on-line);border-radius:14px;padding:13px 14px}
+.cell .k{font-family:"Space Mono",monospace;font-size:.56rem;letter-spacing:.08em;text-transform:uppercase;color:var(--on-mut)}
+.cell .v{font-size:1rem;font-weight:700;margin-top:4px}
+.label{font-family:"Space Mono",monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--on-mut);margin:22px 0 6px}
+.histrow{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--on-line);font-size:.88rem}
+.histrow:last-child{border-bottom:none}
+.histrow .dt{color:var(--on-mut);font-family:"Space Mono",monospace;font-size:.74rem}
+.coupon{display:flex;align-items:center;gap:10px;border:1px dashed rgba(255,255,255,.24);border-radius:13px;padding:12px 14px;font-size:.85rem;color:var(--on-mut);margin-top:16px}
+.coupon b{color:var(--on)}
+.card-on-file{display:flex;align-items:center;gap:11px;background:var(--ink-2);border:1px solid var(--on-line);border-radius:14px;padding:14px;font-size:.88rem;margin-top:16px}
+.visa{font-family:"Space Mono",monospace;font-weight:700;font-size:.72rem;background:#1d4ed8;color:#fff;padding:4px 8px;border-radius:5px}
+.addcard-prompt{display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(224,87,30,.1);border:1px solid rgba(224,87,30,.3);border-radius:14px;padding:13px 15px;margin-top:16px;font-size:.86rem}
+.addcard-prompt button{font-family:"Sora";font-weight:700;font-size:.82rem;color:var(--accent-soft);white-space:nowrap}
+.field{margin-top:16px}
+.field label{display:block;font-family:"Space Mono",monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--on-mut);margin-bottom:7px}
+.field input{width:100%;background:var(--ink-2);border:1px solid var(--on-line);border-radius:14px;color:var(--on);padding:15px 16px;font-family:"Inter";font-size:1.05rem;outline:none;transition:.25s}
+.field input:focus{border-color:var(--accent)}
+.otp{display:flex;gap:10px;justify-content:center;margin:18px 0 6px}
+.otp span{width:54px;height:64px;border-radius:14px;background:var(--ink-2);border:1px solid var(--on-line);display:grid;place-items:center;font-family:"Sora";font-weight:800;font-size:1.6rem}
+.otp span.fill{border-color:var(--accent);color:var(--accent-soft)}
+.cta{margin-top:16px;background:var(--accent);color:#fff;text-align:center;font-family:"Sora";font-weight:700;font-size:1.02rem;padding:16px;border-radius:16px;width:100%;transition:.25s var(--ease)}
+.cta:active{transform:scale(.985)}
+.cta.ghost{background:transparent;border:1px solid var(--on-line);color:var(--on)}
+.cta.dark{background:var(--ink-2);border:1px solid var(--on-line);color:var(--on)}
+.cta-row{display:flex;flex-direction:column;gap:10px}
+.footnote{text-align:center;color:var(--on-mut);font-family:"Space Mono",monospace;font-size:.62rem;letter-spacing:.08em;margin-top:16px}
+.center{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;margin:auto 0}
+.center h2{font-size:1.7rem}.center p{color:var(--on-mut);font-size:.92rem;max-width:260px}
+.bigcheck{width:78px;height:78px;border-radius:50%;background:var(--ok);display:grid;place-items:center;color:#fff;margin-bottom:6px}
+.brandrow{display:flex;align-items:center;justify-content:space-between}
+.brandrow .who{font-family:"Space Mono",monospace;font-size:.72rem;color:var(--on-mut)}
+.big-amt{font-family:"Sora";font-weight:800;font-size:3.2rem;letter-spacing:-.03em;text-align:center;margin:8px 0}
+.hold{position:relative;background:var(--accent);color:#fff;text-align:center;font-family:"Sora";font-weight:700;font-size:1.02rem;padding:18px;border-radius:18px;overflow:hidden;user-select:none}
+.hold .fill{position:absolute;inset:0;background:rgba(0,0,0,.2);width:0}
+
+/* ===================== SHOP (light) ===================== */
+#shop{display:none;min-height:100vh;background:var(--bg);color:var(--text)}
+#shop.on{display:block}
+.sbar{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;background:rgba(248,246,241,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+.sbar .b{display:flex;align-items:center;gap:9px;font-family:"Sora";font-weight:700}
+.sbar .b .mk{width:26px;height:26px;border-radius:7px;background:var(--accent);display:grid;place-items:center}
+.sbar .b .mk svg{width:15px;height:15px}
+.sbar a{font-size:.82rem;color:var(--muted);font-family:"Space Mono",monospace}
+.swrap{max-width:1100px;margin:0 auto;padding:26px 22px 70px}
+.stabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.stabs button{padding:9px 16px;border-radius:100px;font-family:"Sora";font-weight:600;font-size:.86rem;color:var(--muted);border:1px solid var(--line);background:var(--surface)}
+.stabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.stab{display:none}.stab.on{display:block}
+.stab h2{font-size:1.5rem;margin-bottom:4px}
+.stab .sub{color:var(--muted);font-size:.9rem;margin-bottom:22px}
+.welcome{background:linear-gradient(135deg,var(--ink),#23232a);color:#fff;border-radius:16px;padding:18px 20px;margin-bottom:20px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:var(--shadow)}
+.welcome .k{font-family:"Space Mono",monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-soft)}
+.welcome .v{font-family:"Sora";font-weight:700;font-size:1.15rem;margin-top:4px}
+.welcome .s{color:var(--on-mut);font-size:.84rem;margin-top:3px}
+.welcome .r{font-family:"Space Mono",monospace;font-size:.72rem;color:var(--on-mut);text-align:right}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.colh{font-family:"Space Mono",monospace;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-bottom:11px;display:flex;align-items:center;gap:7px}
+.colh .dot{width:7px;height:7px;border-radius:50%}
+.cc{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:11px}
+.cc.live{background:#fff;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+.cc .nm{font-family:"Sora";font-weight:700;font-size:.95rem;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.cc .car{font-size:.8rem;color:var(--muted);margin-top:2px}
+.cc .meta{font-family:"Space Mono",monospace;font-size:.68rem;color:var(--muted-2);margin-top:9px}
+.pill{font-family:"Space Mono",monospace;font-size:.56rem;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:20px;font-weight:700}
+.pill.here{background:var(--accent-tint);color:var(--accent-deep)}.pill.due{background:#FBEFD7;color:var(--warn)}.pill.drift{background:var(--bg-tint);color:var(--muted)}
+.wo{background:var(--surface-2);border:1px solid var(--line);border-radius:16px;padding:22px;max-width:560px}
+.wo .top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:4px}
+.wo .top .nm{font-family:"Sora";font-weight:700;font-size:1.05rem}
+.wo .top .st{font-family:"Space Mono",monospace;font-size:.7rem;color:var(--ok-d);background:rgba(62,142,94,.12);padding:4px 10px;border-radius:20px}
+.li{display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid var(--line)}
+.li:last-child{border-bottom:none}
+.li .t{font-weight:600;font-size:.95rem}.li .d{font-size:.8rem;color:var(--muted);margin-top:2px}
+.li .price{font-family:"Sora";font-weight:700;margin-left:auto}
+.sbtn{background:var(--accent);color:#fff;padding:9px 15px;border-radius:100px;font-family:"Sora";font-weight:600;font-size:.82rem}
+.sbtn.ghost{background:transparent;border:1px solid var(--line-strong);color:var(--text)}
+.sbtn.wait{background:var(--bg-tint);color:var(--muted);pointer-events:none}
+.sbtn.done{background:rgba(62,142,94,.12);color:var(--ok-d);pointer-events:none}
+.an-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.an{background:var(--surface-2);border:1px solid var(--line);border-radius:15px;padding:20px}
+.an .k{font-family:"Space Mono",monospace;font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2)}
+.an .v{font-family:"Sora";font-weight:800;font-size:2rem;letter-spacing:-.03em;margin-top:8px}
+.an .v .u{color:var(--accent);font-size:1.3rem}
+.an .t{font-size:.78rem;color:var(--ok-d);margin-top:6px;font-weight:600}
+.rec-hd{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.avatar{width:54px;height:54px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-family:"Sora";font-weight:700;font-size:1.2rem;flex:0 0 auto}
+.rec-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.kpi{background:var(--surface-2);border:1px solid var(--line);border-radius:13px;padding:15px}
+.kpi .k{font-family:"Space Mono",monospace;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2)}
+.kpi .v{font-family:"Sora";font-weight:700;font-size:1.25rem;margin-top:5px}.kpi .v.accent{color:var(--accent)}
+.tbl{width:100%;border-collapse:collapse;font-size:.88rem}
+.tbl th{text-align:left;font-family:"Space Mono",monospace;font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2);font-weight:400;padding:10px 12px;border-bottom:1px solid var(--line)}
+.tbl td{padding:13px 12px;border-bottom:1px solid var(--line)}.tbl tr:last-child td{border-bottom:none}
+
+/* ===================== sheets, toast, fab ===================== */
+.toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
+  background:#000;color:#fff;padding:13px 20px;border-radius:100px;font-size:.86rem;z-index:90;opacity:0;transition:.4s var(--ease);
+  display:flex;align-items:center;gap:9px;box-shadow:0 20px 50px -10px rgba(0,0,0,.5);max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast .d{width:8px;height:8px;border-radius:50%;background:var(--accent-soft);flex:0 0 auto}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:95;opacity:0;pointer-events:none;transition:.3s}
+.sheet-bg.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:96;background:#16161b;color:var(--on);border-radius:24px 24px 0 0;
+  padding:10px 18px calc(22px + env(safe-area-inset-bottom));transform:translateY(110%);transition:.4s var(--ease);max-width:460px;margin:0 auto}
+.sheet.show{transform:none}
+.sheet .grab{width:38px;height:4px;background:rgba(255,255,255,.25);border-radius:3px;margin:8px auto 14px}
+.sheet h4{font-size:1rem;margin-bottom:4px}
+.sheet .dh{font-family:"Space Mono",monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--on-mut);margin:14px 0 8px}
+.sheet button.row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px;border-radius:13px;background:#1f1f25;border:1px solid var(--on-line);margin-bottom:9px;font-weight:600;font-size:.92rem}
+.sheet button.row .ic{width:20px;flex:0 0 auto;color:var(--accent-soft)}
+.sheet button.row.danger{color:#ff7a6b}
+
+@media(min-width:520px){
+  #app{margin:24px auto;min-height:auto;height:780px;max-height:calc(100vh - 48px);border-radius:42px;border:1px solid var(--on-line);box-shadow:0 50px 100px -40px rgba(0,0,0,.6)}
+  body:has(#app.hidden){background:var(--bg)}
+  body:not(:has(#app.hidden)){background:#08080a}
+  .sheet{border-radius:24px;bottom:auto;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);max-width:380px;border:1px solid var(--on-line)}
+  .sheet.show{transform:translate(-50%,-50%)}
+  .sheet-bg.show{}
+}
+@media(max-width:760px){.board{grid-template-columns:1fr}.an-grid,.rec-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- ===================== CUSTOMER APP ===================== -->
+<div id="app">
+  <div class="appbar">
+    <div class="shop"><span class="mk"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a13 13 0 0 1 0 12M13 4a18 18 0 0 1 0 16" stroke="#fff" stroke-width="2"/></svg></span>Sir Walter Quick Lube</div>
+    <div class="right">
+      <span class="secure" id="secure"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/></svg><span id="secure-txt">Verified</span></span>
+      <button class="gear" onclick="openSheet()" aria-label="Demo controls"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    </div>
+  </div>
+
+  <div class="screens">
+    <!-- TIER 0: TAP -->
+    <div class="screen on" data-s="tap">
+      <span class="eyebrow2">You tapped this car's tag</span>
+      <div class="carname" id="tap-car">2021 Toyota RAV4</div>
+      <div class="due"><div class="k">Looks due for</div><div class="v">Oil change <small id="tap-due">in ~3 weeks</small></div><div class="bar"><i style="width:78%"></i></div></div>
+      <p class="lede">This is the public view. No history, no personal details, no payment, until you sign in on your own phone.</p>
+      <div class="spacer"></div>
+      <div class="cta-row">
+        <button class="cta" onclick="go('savephone')">This is my car, save it</button>
+        <button class="cta ghost" onclick="go('booked')">Just book a visit</button>
+      </div>
+      <div class="footnote">Tap Auto · private by design · no app to download</div>
+    </div>
+
+    <!-- SAVE: phone + name -->
+    <div class="screen" data-s="savephone">
+      <span class="eyebrow2">Save your car</span>
+      <h2 style="font-size:1.6rem;margin-top:6px" id="save-title">Skip the counter next time</h2>
+      <p class="lede">We will text you a code. No password, no app, no spam.</p>
+      <div class="field"><label>Your name</label><input id="in-name" type="text" placeholder="Marcus" autocomplete="given-name" /></div>
+      <div class="field"><label>Mobile number</label><input id="in-phone" type="tel" placeholder="(919) 555 0142" autocomplete="tel" /></div>
+      <div class="spacer"></div>
+      <button class="cta" onclick="sendCode()">Send my code</button>
+      <div class="footnote">Tier 1 · just enough to know it's you</div>
+    </div>
+
+    <!-- SAVE: code -->
+    <div class="screen" data-s="savecode">
+      <span class="eyebrow2">Verify it's you</span>
+      <h2 style="font-size:1.6rem;margin-top:6px">Enter your code</h2>
+      <p class="lede">Sent to <span id="code-to">your phone</span>. (Demo: any 4 digits work.)</p>
+      <div class="otp" id="otp"><span>8</span><span>1</span><span>4</span><span>2</span></div>
+      <div class="coupon">🎟️ <span><b>$15 off</b> your next visit, applied automatically</span></div>
+      <div class="spacer"></div>
+      <button class="cta" onclick="verifyCode()">Verify and save my car</button>
+      <button class="cta ghost" onclick="go('savephone')" style="margin-top:10px">Back</button>
+    </div>
+
+    <!-- ACCOUNT -->
+    <div class="screen" data-s="account">
+      <div class="brandrow"><span class="eyebrow2">Your car</span><span class="who" id="acct-tier">Tier 2 · full account</span></div>
+      <div class="carname" id="acct-car">2021 Toyota RAV4</div>
+      <div class="due"><div class="k">Next oil change</div><div class="v"><span id="acct-due">~3 weeks</span> <small>/ 480 mi</small></div><div class="bar"><i style="width:78%"></i></div></div>
+      <div class="cells">
+        <div class="cell"><div class="k">Oil type</div><div class="v" id="acct-oil">0W-20 Syn</div></div>
+        <div class="cell"><div class="k">Mileage</div><div class="v" id="acct-miles">42,180</div></div>
+      </div>
+      <div class="label">Service history</div>
+      <div>
+        <div class="histrow"><span>Full synthetic oil change</span><span class="dt">Mar 2</span></div>
+        <div class="histrow"><span>Oil change + air filter</span><span class="dt">Nov 14</span></div>
+        <div class="histrow"><span>Tire rotation</span><span class="dt">Aug 1</span></div>
+      </div>
+      <div class="coupon">🎟️ <span><b>$15 off</b>, because you're due</span></div>
+      <div id="card-block"></div>
+      <div class="spacer"></div>
+      <button class="cta" onclick="book()">Book your spot · 2 taps</button>
+      <div class="footnote">The longer you use it, the more your car remembers</div>
+    </div>
+
+    <!-- ADD CARD -->
+    <div class="screen" data-s="addcard">
+      <span class="eyebrow2">Add a card</span>
+      <h2 style="font-size:1.6rem;margin-top:6px">Pay by tap, skip the counter</h2>
+      <p class="lede">Add a card once and you can approve work and pay right from your phone. Demo only, no real card is stored.</p>
+      <div class="card-on-file" style="margin-top:18px"><span class="visa">VISA</span> ···· 6411 · demo card</div>
+      <div class="spacer"></div>
+      <button class="cta" onclick="addCard()">Use demo card</button>
+      <button class="cta ghost" onclick="go('account')" style="margin-top:10px">Maybe later</button>
+      <div class="footnote">Tier 2 · card on file via Stripe</div>
+    </div>
+
+    <!-- BOOKED -->
+    <div class="screen" data-s="booked">
+      <div class="center">
+        <div class="bigcheck"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+        <h2>You're booked</h2>
+        <p>Sir Walter will expect you. Pull into bay 2, leave the keys in the dash, and relax in the lobby.</p>
+      </div>
+      <div class="coupon">🎟️ <span>Your <b>$15 off</b> is locked in for this visit</span></div>
+      <button class="cta ghost" onclick="go('account')" style="margin-top:16px">Back to my car</button>
+    </div>
+
+    <!-- APPROVAL -->
+    <div class="screen" data-s="approve">
+      <span class="eyebrow2">Message from your tech</span>
+      <div class="spacer"></div>
+      <div class="center" id="appr-pre">
+        <div style="width:60px;height:60px;border-radius:16px;background:var(--accent);display:grid;place-items:center;color:#fff;margin-bottom:6px">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+        </div>
+        <h2>Quick approval</h2>
+        <p>Your wiper blades are worn and won't pass inspection. Want us to swap them while you're here?</p>
+        <div style="font-family:'Sora';font-weight:800;font-size:2rem;margin-top:6px">$14.00</div>
+      </div>
+      <div class="center" id="appr-post" style="display:none">
+        <div class="bigcheck"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+        <h2>Approved</h2><p>Your tech is on it. No walking back to the lobby.</p>
+      </div>
+      <div class="spacer"></div>
+      <div id="appr-actions" class="cta-row">
+        <button class="cta" onclick="approve()">Approve $14</button>
+        <button class="cta ghost" onclick="toast('Declined, your tech is notified')">Not this time</button>
+      </div>
+    </div>
+
+    <!-- PAY -->
+    <div class="screen" data-s="pay">
+      <div id="pay-pre" style="display:flex;flex-direction:column;flex:1">
+        <span class="eyebrow2">Service complete</span>
+        <div class="big-amt" id="pay-amt">$63.40</div>
+        <div>
+          <div class="histrow"><span>Full synthetic oil change</span><span class="dt">$49.40</span></div>
+          <div class="histrow" id="pay-wipers"><span>Wiper blades (approved)</span><span class="dt">$14.00</span></div>
+        </div>
+        <div class="card-on-file" style="margin-top:16px"><span class="visa">VISA</span> ···· 6411 · pay with Face ID</div>
+        <div class="spacer"></div>
+        <div class="hold" id="hold" onmousedown="holdStart()" onmouseup="holdEnd()" onmouseleave="holdEnd()" ontouchstart="holdStart()" ontouchend="holdEnd()"><span class="fill" id="holdfill"></span>Hold to pay</div>
+        <div class="footnote">No counter, no paper</div>
+      </div>
+      <div id="pay-post" style="display:none;flex-direction:column;flex:1">
+        <div class="spacer"></div>
+        <div class="center"><div class="bigcheck"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><h2>Paid · <span id="paid-amt">$63.40</span></h2><p id="paid-name">Receipt texted to you. You're all set, drive safe.</p></div>
+        <div class="coupon">🎟️ <span>Come back by Sept and your next change is <b>$10 off</b></span></div>
+        <div class="spacer"></div>
+        <button class="cta ghost" onclick="go('account')">Back to my car</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SHOP ===================== -->
+<div id="shop">
+  <div class="sbar">
+    <div class="b"><span class="mk"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a13 13 0 0 1 0 12M13 4a18 18 0 0 1 0 16" stroke="#fff" stroke-width="2"/></svg></span>Tap Auto · Sir Walter Quick Lube</div>
+    <a href="#" onclick="location.hash=''">← Customer view</a>
+  </div>
+  <div class="swrap">
+    <div class="stabs">
+      <button class="on" data-t="board" onclick="stab('board')">Live board</button>
+      <button data-t="approvals" onclick="stab('approvals')">Approvals</button>
+      <button data-t="customers" onclick="stab('customers')">Customer record</button>
+      <button data-t="analytics" onclick="stab('analytics')">Analytics</button>
+    </div>
+
+    <div class="stab on" id="st-board">
+      <h2>Live board</h2><div class="sub">Who's here, who's due, who's drifting</div>
+      <div class="welcome">
+        <div><div class="k">Pulling in now · recognized by tag</div><div class="v">Marcus R. · 2021 RAV4</div><div class="s">4th visit · due for oil change · $15 coupon active · Visa on file</div></div>
+        <div class="r">tapped 30s ago<br>send to bay 2</div>
+      </div>
+      <div class="board">
+        <div><div class="colh"><span class="dot" style="background:var(--accent)"></span>Here now</div>
+          <div class="cc live"><div class="nm">Marcus Reyes <span class="pill here">Bay 2</span></div><div class="car">2021 RAV4 · oil change</div><div class="meta">checked in 9:41a · history loaded</div></div>
+          <div class="cc"><div class="nm">Dana Whitfield <span class="pill here">Bay 1</span></div><div class="car">2019 F-150 · oil + rotation</div><div class="meta">checked in 9:28a</div></div></div>
+        <div><div class="colh"><span class="dot" style="background:var(--warn)"></span>Due soon</div>
+          <div class="cc"><div class="nm">Priya N. <span class="pill due">5 days</span></div><div class="car">2022 CR-V</div><div class="meta">reminder queued</div></div>
+          <div class="cc"><div class="nm">Sam O. <span class="pill due">Due now</span></div><div class="car">2018 Camry</div><div class="meta">reminder queued</div></div></div>
+        <div><div class="colh"><span class="dot" style="background:var(--muted-2)"></span>Drifting · 90+ days</div>
+          <div class="cc"><div class="nm">Terrence B. <span class="pill drift">Win back</span></div><div class="car">2020 Civic</div><div class="meta">last in Jan 4</div></div>
+          <div class="cc"><div class="nm">Lena K. <span class="pill drift">Win back</span></div><div class="car">2017 Outback</div><div class="meta">last in Dec 1</div></div></div>
+      </div>
+    </div>
+
+    <div class="stab" id="st-approvals">
+      <h2>Approvals</h2><div class="sub">Push an upsell to the customer's phone, get a yes without leaving the bay</div>
+      <div class="wo">
+        <div class="top"><div class="nm">Marcus Reyes · 2021 RAV4</div><div class="st">In progress · bay 2</div></div>
+        <div class="li"><div><div class="t">Full synthetic oil change</div><div class="d">Standard service</div></div><span class="price">$49.40</span></div>
+        <div class="li"><div><div class="t">Wiper blades</div><div class="d">Worn, recommend before inspection</div></div><span class="price">$14.00</span><button class="sbtn" id="send-appr" onclick="shopSendApproval()">Send to phone</button></div>
+        <div class="li"><div><div class="t">Cabin air filter</div><div class="d">Looks fine, no action</div></div><span class="price" style="color:var(--muted-2)">n/a</span></div>
+        <div style="margin-top:16px;font-size:.84rem;color:var(--muted)" id="appr-status">Tip: open this on a laptop and the demo on your phone (same browser profile), then hit "Send to phone" to watch it appear and get approved live.</div>
+      </div>
+    </div>
+
+    <div class="stab" id="st-customers">
+      <h2>Customer record</h2><div class="sub">Everything tied to the vehicle, not just the visit</div>
+      <div class="rec-hd"><div class="avatar">MR</div><div><div style="font-family:'Sora';font-weight:700;font-size:1.3rem">Marcus Reyes</div><div class="sub" style="margin:0">2021 Toyota RAV4 · plate KRT-4471 · Visa ···· 6411 on file</div></div></div>
+      <div class="rec-grid">
+        <div class="kpi"><div class="k">Visits</div><div class="v">4</div></div>
+        <div class="kpi"><div class="k">Lifetime</div><div class="v">$312</div></div>
+        <div class="kpi"><div class="k">Last in</div><div class="v">Mar 2</div></div>
+        <div class="kpi"><div class="k">Next due</div><div class="v accent">~Jun 28</div></div>
+      </div>
+      <table class="tbl"><thead><tr><th>Date</th><th>Service</th><th>Mileage</th><th>Total</th></tr></thead><tbody>
+        <tr><td class="mono">Mar 2, 2026</td><td>Full synthetic oil change</td><td>42,180</td><td>$49.40</td></tr>
+        <tr><td class="mono">Nov 14, 2025</td><td>Oil change + air filter</td><td>38,902</td><td>$72.10</td></tr>
+        <tr><td class="mono">Aug 1, 2025</td><td>Tire rotation</td><td>35,510</td><td>$29.00</td></tr>
+        <tr><td class="mono">May 9, 2025</td><td>Full synthetic oil change</td><td>32,240</td><td>$49.40</td></tr>
+      </tbody></table>
+    </div>
+
+    <div class="stab" id="st-analytics">
+      <h2>Analytics</h2><div class="sub">The numbers that tell you the tag is working (sample data)</div>
+      <div class="an-grid">
+        <div class="an"><div class="k">Tags tapped · 30d</div><div class="v">418</div><div class="t">↑ 22% vs last month</div></div>
+        <div class="an"><div class="k">Rebook rate</div><div class="v">61<span class="u">%</span></div><div class="t">↑ from 38% baseline</div></div>
+        <div class="an"><div class="k">Approvals said yes</div><div class="v">$2,140</div><div class="t">mid-service upsells</div></div>
+        <div class="an"><div class="k">Google reviews</div><div class="v">37</div><div class="t">↑ 4.6 to 4.8 stars</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- sheet + toast -->
+<div class="sheet-bg" id="sheet-bg" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="grab"></div>
+  <h4>Demo controls</h4>
+  <p style="color:var(--on-mut);font-size:.82rem">Drive the story live. Only you see this.</p>
+  <div class="dh">Trigger events</div>
+  <button class="row" onclick="closeSheet();go('approve');resetApproval()"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>A tech sent an approval</button>
+  <button class="row" onclick="closeSheet();go('pay')"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>Service complete, go to pay</button>
+  <div class="dh">Navigate</div>
+  <button class="row" onclick="closeSheet();go('account')"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg></span>My account home</button>
+  <button class="row" onclick="closeSheet();location.hash='shop'"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Open shop dashboard</button>
+  <div class="dh">Reset</div>
+  <button class="row danger" onclick="resetDemo()"><span class="ic" style="color:#ff7a6b"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg></span>Forget me, start as a stranger</button>
+</div>
+
+<div class="toast" id="toast"><span class="d"></span><span id="toast-msg"></span></div>
+
+<script>
+// ---------- data ----------
+var CARS={
+  rav4:{name:"2021 Toyota RAV4",oil:"0W-20 Syn",miles:"42,180",due:"~3 weeks"},
+  f150:{name:"2019 Ford F-150",oil:"5W-30 Syn",miles:"61,540",due:"~2 weeks"},
+  civic:{name:"2020 Honda Civic",oil:"0W-20 Syn",miles:"48,210",due:"overdue"}
+};
+var STORE_KEY="tapauto-demo-v1";
+var ch=("BroadcastChannel" in window)?new BroadcastChannel("tapauto-demo"):null;
+
+function load(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||"{}"); }catch(e){ return window.__mem||{}; } }
+function save(s){ try{ localStorage.setItem(STORE_KEY,JSON.stringify(s)); }catch(e){ window.__mem=s; } }
+var state=load();
+
+// ---------- url params (vehicle + NTAG 424 SUN/SDM) ----------
+var params=new URLSearchParams(location.search);
+var carKey=(params.get("car")||"rav4").toLowerCase(); if(!CARS[carKey])carKey="rav4";
+var car=CARS[carKey];
+// SUN/SDM mirror: support common param names for counter + uid
+var ctr=params.get("ctr")||params.get("counter")||params.get("c")||params.get("tt")||null;
+var uid=params.get("uid")||params.get("id")||null;
+var hasSun=!!(ctr||params.get("cmac")||params.get("picc")||params.get("e"));
+
+// ---------- screen flow ----------
+function go(s){
+  document.querySelectorAll("#app .screen").forEach(function(el){ el.classList.toggle("on",el.dataset.s===s); });
+  document.querySelector("#app .screens").scrollTop=0;
+}
+function renderCar(){
+  document.getElementById("tap-car").textContent=car.name;
+  document.getElementById("tap-due").textContent="in "+car.due.replace("~","~ ").replace("~ ","~");
+  document.getElementById("acct-car").textContent=car.name;
+  document.getElementById("acct-oil").textContent=car.oil;
+  document.getElementById("acct-miles").textContent=car.miles;
+  document.getElementById("acct-due").textContent=car.due;
+  document.getElementById("tap-due").textContent="in "+car.due;
+}
+function renderCard(){
+  var b=document.getElementById("card-block");
+  if(state.hasCard){
+    b.innerHTML='<div class="card-on-file"><span class="visa">VISA</span> ···· 6411 on file · tap-to-pay on</div>';
+    document.getElementById("acct-tier").textContent="Tier 2 · full account";
+  }else{
+    b.innerHTML='<div class="addcard-prompt"><span>Add a card to approve work and pay by tap</span><button onclick="go(\'addcard\')">Add card</button></div>';
+    document.getElementById("acct-tier").textContent="Tier 1 · saved";
+  }
+}
+function renderSecure(){
+  if(hasSun){
+    document.getElementById("secure").classList.add("show");
+    document.getElementById("secure-txt").textContent=ctr?("Verified · #"+parseInt(ctr,16||10)):"Verified";
+    try{ if(ctr){ var n=/^[0-9a-fA-F]+$/.test(ctr)?parseInt(ctr,16):parseInt(ctr,10); if(!isNaN(n)) document.getElementById("secure-txt").textContent="Verified · tap #"+n; } }catch(e){}
+  }
+}
+
+// ---------- save flow ----------
+function sendCode(){
+  var nm=document.getElementById("in-name").value.trim();
+  state.name=nm||"there";
+  var ph=document.getElementById("in-phone").value.trim();
+  var last4=(ph.replace(/\D/g,"").slice(-4))||"0142";
+  document.getElementById("code-to").textContent="···· "+last4;
+  go("savecode");
+}
+function verifyCode(){
+  state.saved=true; save(state);
+  renderCard();
+  toast("Car saved · welcome, "+(state.name||"there"));
+  go("account");
+}
+function addCard(){ state.hasCard=true; save(state); renderCard(); toast("Card added · tap-to-pay is on"); go("account"); }
+function book(){ go("booked"); toast("Booked · Sir Walter will expect you"); }
+
+// ---------- approval ----------
+function resetApproval(){
+  document.getElementById("appr-pre").style.display="flex";
+  document.getElementById("appr-post").style.display="none";
+  document.getElementById("appr-actions").style.display="flex";
+}
+function approve(){
+  document.getElementById("appr-pre").style.display="none";
+  document.getElementById("appr-post").style.display="flex";
+  document.getElementById("appr-actions").style.display="none";
+  toast("Approved · your tech is notified");
+  if(ch) ch.postMessage({type:"approved"});
+}
+
+// ---------- pay ----------
+var holdTimer=null,holdVal=0;
+function holdStart(){ holdVal=0; holdTimer=setInterval(function(){ holdVal+=5; document.getElementById("holdfill").style.width=holdVal+"%"; if(holdVal>=100){ holdEnd(); payDone(); } },40); }
+function holdEnd(){ if(holdTimer){clearInterval(holdTimer);holdTimer=null;} if(holdVal<100){document.getElementById("holdfill").style.width="0";holdVal=0;} }
+function payDone(){ document.getElementById("pay-pre").style.display="none"; document.getElementById("pay-post").style.display="flex"; document.getElementById("paid-name").textContent="Receipt texted to you. You're all set, drive safe"+(state.name?(", "+state.name):"")+"."; toast("Paid · receipt sent"); }
+
+// ---------- sheet ----------
+function openSheet(){ document.getElementById("sheet").classList.add("show"); document.getElementById("sheet-bg").classList.add("show"); }
+function closeSheet(){ document.getElementById("sheet").classList.remove("show"); document.getElementById("sheet-bg").classList.remove("show"); }
+function resetDemo(){ try{localStorage.removeItem(STORE_KEY);}catch(e){} window.__mem={}; state={}; closeSheet(); renderCard(); go("tap"); toast("Reset · you're a stranger again"); }
+
+// ---------- toast ----------
+function toast(m){ var t=document.getElementById("toast"); document.getElementById("toast-msg").textContent=m; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(function(){t.classList.remove("show");},2600); }
+
+// ---------- shop ----------
+function stab(t){ document.querySelectorAll(".stab").forEach(function(x){x.classList.toggle("on",x.id==="st-"+t);}); document.querySelectorAll(".stabs button").forEach(function(b){b.classList.toggle("on",b.dataset.t===t);}); }
+function shopSendApproval(){
+  var b=document.getElementById("send-appr"); b.className="sbtn wait"; b.textContent="Awaiting…";
+  document.getElementById("appr-status").innerHTML="Sent to the customer's phone. If the demo is open in another tab, it just popped up there.";
+  if(ch) ch.postMessage({type:"approval"});
+  toast("Approval sent to customer's phone");
+}
+if(ch){ ch.onmessage=function(e){
+  if(e.data&&e.data.type==="approval"){ resetApproval(); go("approve"); if(document.getElementById("app").classList.contains("hidden")){} toast("Your tech needs an approval"); }
+  if(e.data&&e.data.type==="approved"){ var b=document.getElementById("send-appr"); if(b){ b.className="sbtn done"; b.textContent="Approved ✓"; document.getElementById("appr-status").innerHTML='<b style="color:var(--ok-d)">Approved by the customer at 9:42a.</b> Your tech can proceed.'; } }
+}; }
+
+// ---------- router ----------
+function route(){
+  var isShop=location.hash==="#shop";
+  document.getElementById("app").classList.toggle("hidden",isShop);
+  document.getElementById("shop").classList.toggle("on",isShop);
+  document.querySelector('meta[name=theme-color]').setAttribute("content",isShop?"#F4F2EC":"#0b0b0e");
+}
+window.addEventListener("hashchange",route);
+
+// ---------- init ----------
+renderCar(); renderCard(); renderSecure(); route();
+if(state.saved){ go("account"); if(state.name) toast("Welcome back, "+state.name); }
+else{ go("tap"); }
+</script>
+</body>
+</html>
