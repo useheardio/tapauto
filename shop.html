@@ -339,7 +339,7 @@ input{font-family:inherit}
       <button class="actbtn" onclick="toast('Opened the customer view of their app')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></span>View their app</button>
     </div>
     <div class="seclbl">Service history</div>
-    <table class="tbl"><thead><tr><th>Date</th><th>Service</th><th>Mileage</th><th>Total</th></tr></thead><tbody>
+    <table class="tbl"><thead><tr><th>Date</th><th>Service</th><th>Mileage</th><th>Total</th></tr></thead><tbody id="cd-hist">
       <tr><td class="mono">Mar 2, 2026</td><td>Full synthetic oil change</td><td>42,180</td><td>$49.40</td></tr>
       <tr><td class="mono">Nov 14, 2025</td><td>Oil change + air filter</td><td>38,902</td><td>$72.10</td></tr>
       <tr><td class="mono">Aug 1, 2025</td><td>Tire rotation</td><td>35,510</td><td>$29.00</td></tr>
@@ -476,9 +476,10 @@ async function enterApp(staff){
   window.SHOP_ID=staff.shop_id;
   var av=document.querySelector(".who .av");
   if(av&&staff.name){ av.textContent=staff.name.split(" ").map(function(p){return p[0]||"";}).join("").slice(0,2).toUpperCase(); }
-  try{ var sh=await supaClient.from("shops").select("name").eq("id",staff.shop_id).maybeSingle();
-       if(sh.data&&sh.data.name){ var nmEl=el("shopname"); if(nmEl) nmEl.textContent=sh.data.name; } }catch(e){}
-  renderLive(); renderCustomers(); renderBuckets(); tab("bay");
+  try{ var sh=await supaClient.from("shops").select("name,branding").eq("id",staff.shop_id).maybeSingle();
+       if(sh.data){ if(sh.data.name){ var nmEl=el("shopname"); if(nmEl) nmEl.textContent=sh.data.name; }
+                    if(sh.data.branding&&sh.data.branding.interval_miles){ INTERVAL=sh.data.branding.interval_miles; } } }catch(e){}
+  renderBuckets(); tab("bay"); loadCustomers();
 }
 async function boot(){
   await initSupa();
@@ -543,31 +544,91 @@ function tab(t){
 }
 
 /* ---------- live + customers ---------- */
+var DBALL=null;        // customer rows from the DB (null => fall back to samples)
+var SESSION_LIVE=[];   // cars touched this session => the "in the bay now" list
+var CUST_INDEX={};
+function liveList(){ return window.SHOP_ID ? SESSION_LIVE : LIVE; }
+function allList(){ return DBALL!==null ? DBALL : ALL; }
+function fmtDate(s){ try{ return new Date(s).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}); }catch(e){ return ""; } }
+function statusLabel(s){ return s>=80?"Healthy":(s>=55?"Due soon":(s>=33?"Overdue":"Service now")); }
+function estHealth(interval,lastAt){
+  interval=interval||5000;
+  var since=lastAt?(Date.now()-new Date(lastAt).getTime())/(1000*60*60*24*30.44):0; // months
+  var frac=(since*1000)/interval; // assume ~1,000 mi / month
+  var h=frac<=1?(100-frac*28):(72-(frac-1)*55);
+  return Math.max(5,Math.min(100,Math.round(h)));
+}
+function initials(nm){ return (nm||"").split(" ").map(function(p){return p[0]||"";}).join("").slice(0,2).toUpperCase()||"NA"; }
 function liveCard(c,live){
-  return '<button class="ccard'+(live?" live":"")+'" onclick="openCust(\''+c.init+'\')">'+
+  if(!c.key) c.key=c.init||("c-"+Math.random().toString(36).slice(2,7));
+  CUST_INDEX[c.key]=c;
+  return '<button class="ccard'+(live?" live":"")+'" onclick="openCust(\''+c.key+'\')">'+
     '<span class="av">'+c.init+'</span>'+
     '<span><span class="nm">'+c.nm+'</span><span class="car">'+c.car+'</span></span>'+
     '<span class="rt"><span class="sc" style="color:'+scoreColor(c.score)+'">'+c.score+'</span><span class="mt">'+(c.bay||c.meta||"")+'</span></span></button>';
 }
 function renderLive(){
-  el("bay-live").innerHTML=LIVE.map(function(c){return liveCard(c,true);}).join("");
-  el("cust-live").innerHTML=LIVE.map(function(c){return liveCard(c,true);}).join("");
-  el("bay-ct").textContent=LIVE.length; el("live-ct").textContent=LIVE.length;
+  var L=liveList();
+  el("bay-live").innerHTML=L.map(function(c){return liveCard(c,true);}).join("")||'<p class="sub" style="margin-top:6px">No cars in the bay right now. Assign or log one above.</p>';
+  el("cust-live").innerHTML=L.map(function(c){return liveCard(c,true);}).join("")||'<p class="sub">No one live right now.</p>';
+  el("bay-ct").textContent=L.length; el("live-ct").textContent=L.length;
 }
 function renderCustomers(){
   var q=(el("cust-search").value||"").toLowerCase();
-  var list=ALL.filter(function(c){return (c.nm+" "+c.car+" "+c.plate).toLowerCase().indexOf(q)>=0;});
-  el("cust-all").innerHTML=list.map(function(c){return liveCard(c,false);}).join("")||'<p class="sub">No matches.</p>';
+  var list=allList().filter(function(c){return (c.nm+" "+c.car+" "+c.plate).toLowerCase().indexOf(q)>=0;});
+  el("cust-all").innerHTML=list.map(function(c){return liveCard(c,false);}).join("")||
+    '<p class="sub">'+(allList().length?'No matches.':'No customers yet. Assign your first tag in the bay.')+'</p>';
 }
-function openCust(init){
-  var c=ALL.concat(LIVE).filter(function(x){return x.init===init;})[0]||ALL[0];
+function ensureKeys(arr){ arr.forEach(function(c){ if(!c.key) c.key=c.init; }); return arr; }
+async function loadCustomers(){
+  if(!window.SHOP_ID||!supaClient){ DBALL=null; ensureKeys(ALL); renderLive(); renderCustomers(); return; }
+  try{
+    var vq=await supaClient.from("vehicles")
+      .select("id,year,make,model,plate,oil_type,interval_miles,last_service_mileage,last_service_at,vehicle_ownership(active,customers(name,phone))")
+      .eq("shop_id",window.SHOP_ID).order("created_at",{ascending:false});
+    if(vq.error){ DBALL=null; ensureKeys(ALL); renderLive(); renderCustomers(); return; }
+    DBALL=(vq.data||[]).map(function(v){
+      var own=(v.vehicle_ownership||[]).filter(function(o){return o.active;})[0];
+      var cust=own&&own.customers?own.customers:null;
+      var nm=cust&&cust.name?cust.name:"Unknown driver";
+      var car=[v.year,v.make,v.model].filter(Boolean).join(" ")||(v.plate?("Plate "+v.plate):"Vehicle");
+      var score=estHealth(v.interval_miles,v.last_service_at);
+      return { key:"v-"+v.id, vid:v.id, nm:nm, car:car, plate:v.plate||"", init:initials(nm),
+        score:score, status:statusLabel(score),
+        meta:(v.last_service_mileage?Number(v.last_service_mileage).toLocaleString()+" mi":"new"),
+        phone:cust&&cust.phone?cust.phone:"", last_service_mileage:v.last_service_mileage, dt:v.last_service_at };
+    });
+    renderLive(); renderCustomers();
+  }catch(e){ DBALL=null; ensureKeys(ALL); renderLive(); renderCustomers(); }
+}
+function openCust(key){
+  var c=CUST_INDEX[key]||allList()[0]; if(!c) return;
   el("cd-av").textContent=c.init; el("cd-nm").textContent=c.nm;
   el("cd-car").textContent=(c.car||"")+(c.plate?(" · "+c.plate):"");
   el("cd-score").textContent=c.score; el("cd-status").textContent=c.status;
   var col=scoreColor(c.score), C=2*Math.PI*44, r=el("cd-ring");
   r.style.stroke=col; r.style.strokeDasharray=C; r.style.strokeDashoffset=C*(1-c.score/100);
   el("cd-score").style.color=col;
+  el("cd-dt").textContent=(c.dt?("Last in "+fmtDate(c.dt)):"No service logged yet")+(c.phone?(" · "+c.phone):"");
+  loadHistory(c);
   el("cust").classList.add("on");
+}
+async function loadHistory(c){
+  var tb=el("cd-hist"); if(!tb) return;
+  if(!c.vid||!supaClient) return; // sample customer: keep the static rows
+  tb.innerHTML='<tr><td colspan="4" style="color:var(--muted-2)">Loading...</td></tr>';
+  try{
+    var sq=await supaClient.from("service_records").select("performed_at,oil_type,services,mileage,total_cents")
+      .eq("vehicle_id",c.vid).order("performed_at",{ascending:false});
+    if(sq.error||!sq.data||!sq.data.length){ tb.innerHTML='<tr><td colspan="4" style="color:var(--muted)">No service history yet.</td></tr>'; return; }
+    tb.innerHTML=sq.data.map(function(r){
+      var extra=(Array.isArray(r.services)&&r.services.length)?(" "+r.services.join(" ")):"";
+      var name=(r.oil_type?(r.oil_type+" oil change"):"Service")+extra;
+      return '<tr><td class="mono">'+fmtDate(r.performed_at)+'</td><td>'+name+'</td><td>'+
+        (r.mileage?Number(r.mileage).toLocaleString():"-")+'</td><td>'+
+        (r.total_cents!=null?("$"+(r.total_cents/100).toFixed(2)):"-")+'</td></tr>';
+    }).join("");
+  }catch(e){}
 }
 function closeCust(){ el("cust").classList.remove("on"); }
 
@@ -636,7 +697,7 @@ function afterMileage(){
 }
 async function beginWrite(){
   if(!nfcOK) return;
-  try{ var w=new NDEFReader(); await w.write({records:[{recordType:"url",data:DEMO_URL+"?car=rav4&t="+encodeURIComponent(cap.tag)}]}); onWritten(); }
+  try{ var w=new NDEFReader(); await w.write({records:[{recordType:"url",data:DEMO_URL+"?t="+encodeURIComponent(cap.tag)}]}); onWritten(); }
   catch(err){ el("write-status").textContent="Write failed, hold the tag steady and retry"; }
 }
 function simulateWrite(){ onWritten(); }
@@ -646,10 +707,45 @@ function onWritten(){
   el("write-status").textContent="Tag written"; setTimeout(finishNew,720);
 }
 function srow(k,v,cls){ return '<div class="srow"><span class="k">'+k+'</span><span class="v'+(cls?" "+cls:"")+'">'+v+'</span></div>'; }
-function finishNew(){
+async function saveAssignment(){
+  try{
+    var shop=window.SHOP_ID;
+    var miles=parseInt(cap.miles,10); if(isNaN(miles)) miles=null;
+    var nowIso=new Date().toISOString();
+    var cust=await supaClient.from("customers").insert({shop_id:shop,name:cap.name,phone:cap.phone}).select("id").single();
+    if(cust.error) return {ok:false,error:cust.error.message};
+    var veh=await supaClient.from("vehicles").insert({shop_id:shop,plate:cap.plate,oil_type:cap.oil,interval_miles:INTERVAL,last_service_mileage:miles,last_service_at:nowIso}).select("id").single();
+    if(veh.error) return {ok:false,error:veh.error.message};
+    await supaClient.from("vehicle_ownership").insert({shop_id:shop,vehicle_id:veh.data.id,customer_id:cust.data.id,active:true});
+    var locId=null; try{ var lq=await supaClient.from("locations").select("id").eq("shop_id",shop).limit(1).maybeSingle(); if(lq.data) locId=lq.data.id; }catch(e){}
+    var tag=await supaClient.from("tags").upsert({shop_id:shop,token:cap.tag,uid:cap.tag,status:"assigned",vehicle_id:veh.data.id,location_id:locId,locked_at:nowIso},{onConflict:"token"}).select("id").single();
+    if(tag.error) return {ok:false,error:tag.error.message};
+    if(miles!=null){
+      await supaClient.from("service_records").insert({shop_id:shop,vehicle_id:veh.data.id,location_id:locId,mileage:miles,oil_type:cap.oil,services:[cap.svc],next_due_mileage:miles+INTERVAL});
+    }
+    return {ok:true,token:cap.tag,vid:veh.data.id,cid:cust.data.id};
+  }catch(e){ return {ok:false,error:String(e&&e.message?e.message:e)}; }
+}
+async function finishNew(){
+  fgo("done");
   el("done-title").textContent="Tag assigned"; el("done-sub").textContent="Stick it in the windshield corner. This car is now tappable.";
   el("done-summary").innerHTML=srow("Customer",cap.name)+srow("Vehicle",cap.plate)+srow("Odometer",Number(cap.miles).toLocaleString()+" mi")+srow("Service",cap.oil+" · "+cap.svc)+srow("Health score","100 / 100")+srow("Tag opens",DEMO_URL+"?t="+cap.tag,"url");
-  el("done-again").textContent="Assign another"; fgo("done"); toast("Tag assigned · "+cap.name);
+  el("done-again").textContent="Assign another";
+  if(window.SHOP_ID&&supaClient){
+    el("done-sub").textContent="Saving to your database...";
+    var r=await saveAssignment();
+    if(r.ok){
+      el("done-sub").textContent="Saved. Stick it in the windshield corner. This car is now tappable.";
+      SESSION_LIVE.unshift({key:"v-"+r.vid,vid:r.vid,nm:cap.name,car:(cap.plate?("Plate "+cap.plate):"New vehicle"),plate:cap.plate,init:initials(cap.name),score:100,status:"Healthy",bay:"Just assigned",phone:cap.phone,dt:new Date().toISOString(),last_service_mileage:(parseInt(cap.miles,10)||null)});
+      renderLive(); loadCustomers();
+      toast("Saved to your database · "+cap.name);
+    } else {
+      el("done-sub").textContent="The tag is written, but the database save failed. "+(r.error||"");
+      toast("Could not save: "+(r.error||"error"));
+    }
+  } else {
+    toast("Tag assigned · "+cap.name);
+  }
 }
 function finishLog(){
   el("done-title").textContent="Service logged"; el("done-sub").textContent="Marcus gets a receipt, and his health score is back to 100.";
