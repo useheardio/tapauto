@@ -95,6 +95,21 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .hold{position:relative;background:var(--accent);color:#fff;text-align:center;font-family:"Sora";font-weight:700;font-size:1.02rem;padding:18px;border-radius:18px;overflow:hidden;user-select:none}
 .hold .fill{position:absolute;inset:0;background:rgba(0,0,0,.2);width:0}
 
+/* ===================== Car Health Score ===================== */
+.health{display:flex;align-items:center;gap:18px;background:var(--ink-2);border:1px solid var(--on-line);border-radius:18px;padding:16px 18px;margin-top:16px}
+.hs-ring-wrap{position:relative;width:96px;height:96px;flex:0 0 auto}
+.hs-svg{width:96px;height:96px;transform:rotate(-90deg)}
+.hs-track{fill:none;stroke:rgba(255,255,255,.1);stroke-width:9}
+.hs-arc{fill:none;stroke:var(--ok);stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .6s var(--ease),stroke .4s}
+.hs-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.hs-num{font-family:"Sora";font-weight:800;font-size:1.9rem;line-height:1}
+.hs-of{font-family:"Space Mono",monospace;font-size:.52rem;color:var(--on-mut);margin-top:2px}
+.hs-side{flex:1;min-width:0}
+.hs-label{font-family:"Space Mono",monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--on-mut)}
+.hs-statuspill{display:inline-block;margin-top:7px;font-family:"Sora";font-weight:700;font-size:.92rem;border:1px solid var(--ok);color:var(--ok);border-radius:20px;padding:3px 12px}
+.hs-fuel{font-size:.73rem;color:var(--on-mut);margin-top:9px}
+.hs-prompt{background:linear-gradient(150deg,rgba(224,87,30,.14),rgba(224,87,30,.03));border:1px solid rgba(224,87,30,.22);border-radius:14px;padding:13px 15px;font-size:.85rem;color:var(--on);margin-top:12px;line-height:1.45}
+
 /* ===================== App Clip card ===================== */
 #clipbg{position:absolute;inset:0;z-index:60;background:rgba(8,8,10,.5);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);opacity:0;transition:.45s var(--ease);pointer-events:none}
 #clipbg.show{opacity:1;pointer-events:auto}
@@ -260,6 +275,18 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <div class="screen" data-s="account">
       <div class="brandrow"><span class="eyebrow2">Your car</span><span class="who" id="acct-tier">Tier 2 · full account</span></div>
       <div class="carname" id="acct-car">2021 Toyota RAV4</div>
+      <div class="health">
+        <div class="hs-ring-wrap">
+          <svg viewBox="0 0 120 120" class="hs-svg"><circle cx="60" cy="60" r="52" class="hs-track"/><circle cx="60" cy="60" r="52" id="hs-ring" class="hs-arc"/></svg>
+          <div class="hs-center"><div class="hs-num" id="hs-num">88</div><div class="hs-of">/ 100</div></div>
+        </div>
+        <div class="hs-side">
+          <div class="hs-label">Car health score</div>
+          <div class="hs-statuspill" id="hs-statuspill"><span id="hs-status">Healthy</span></div>
+          <div class="hs-fuel" id="hs-fuel">Fuel efficiency: on target</div>
+        </div>
+      </div>
+      <div class="hs-prompt" id="hs-prompt">Your RAV4 is running clean.</div>
       <div class="due"><div class="k">Next oil change</div><div class="v"><span id="acct-due">~3 weeks</span> <small>/ 480 mi</small></div><div class="bar"><i style="width:78%"></i></div></div>
       <div class="cells">
         <div class="cell"><div class="k">Oil type</div><div class="v" id="acct-oil">0W-20 Syn</div></div>
@@ -449,6 +476,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <div class="dh">Trigger events</div>
   <button class="row" onclick="closeSheet();go('approve');resetApproval()"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>A tech sent an approval</button>
   <button class="row" onclick="closeSheet();go('pay')"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>Service complete, go to pay</button>
+  <div class="dh">Car health</div>
+  <button class="row" onclick="drive()"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14M6 17l1.5-5h9L18 17M7 12l1-4h8l1 4"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg></span>Drive 500 miles (watch the score drop)</button>
+  <button class="row" onclick="restoreOil()"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></span>Just changed the oil (restore to 100)</button>
   <div class="dh">Navigate</div>
   <button class="row" onclick="closeSheet();showClip()"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a13 13 0 0 1 0 12M13 4a18 18 0 0 1 0 16"/></svg></span>Replay the tap card</button>
   <button class="row" onclick="closeSheet();go('account')"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg></span>My account home</button>
@@ -462,9 +492,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 <script>
 // ---------- data ----------
 var CARS={
-  rav4:{name:"2021 Toyota RAV4",oil:"0W-20 Syn",miles:"42,180",due:"~3 weeks"},
-  f150:{name:"2019 Ford F-150",oil:"5W-30 Syn",miles:"61,540",due:"~2 weeks"},
-  civic:{name:"2020 Honda Civic",oil:"0W-20 Syn",miles:"48,210",due:"overdue"}
+  rav4:{name:"2021 Toyota RAV4",oil:"0W-20 Syn",miles:"42,180",due:"~3 weeks",interval:5000,since:4600},
+  f150:{name:"2019 Ford F-150",oil:"5W-30 Syn",miles:"61,540",due:"~2 weeks",interval:5000,since:4700},
+  civic:{name:"2020 Honda Civic",oil:"0W-20 Syn",miles:"48,210",due:"overdue",interval:5000,since:5650}
 };
 var STORE_KEY="tapauto-demo-v1";
 var ch=("BroadcastChannel" in window)?new BroadcastChannel("tapauto-demo"):null;
@@ -477,6 +507,7 @@ var state=load();
 var params=new URLSearchParams(location.search);
 var carKey=(params.get("car")||"rav4").toLowerCase(); if(!CARS[carKey])carKey="rav4";
 var car=CARS[carKey];
+if(state.carKey!==carKey){ state.carKey=carKey; state.miles=car.since; save(state); }
 // SUN/SDM mirror: support common param names for counter + uid
 var ctr=params.get("ctr")||params.get("counter")||params.get("c")||params.get("tt")||null;
 var uid=params.get("uid")||params.get("id")||null;
@@ -550,7 +581,7 @@ function approve(){
 var holdTimer=null,holdVal=0;
 function holdStart(){ holdVal=0; holdTimer=setInterval(function(){ holdVal+=5; document.getElementById("holdfill").style.width=holdVal+"%"; if(holdVal>=100){ holdEnd(); payDone(); } },40); }
 function holdEnd(){ if(holdTimer){clearInterval(holdTimer);holdTimer=null;} if(holdVal<100){document.getElementById("holdfill").style.width="0";holdVal=0;} }
-function payDone(){ document.getElementById("pay-pre").style.display="none"; document.getElementById("pay-post").style.display="flex"; document.getElementById("paid-name").textContent="Receipt texted to you. You're all set, drive safe"+(state.name?(", "+state.name):"")+"."; toast("Paid · receipt sent"); }
+function payDone(){ document.getElementById("pay-pre").style.display="none"; document.getElementById("pay-post").style.display="flex"; document.getElementById("paid-name").textContent="Receipt texted to you. You're all set, drive safe"+(state.name?(", "+state.name):"")+"."; state.miles=0; save(state); renderHealth(); toast("Paid · receipt sent · health score back to 100"); }
 
 // ---------- sheet ----------
 function openSheet(){ document.getElementById("sheet").classList.add("show"); document.getElementById("sheet-bg").classList.add("show"); }
@@ -599,8 +630,48 @@ function route(){
 }
 window.addEventListener("hashchange",route);
 
+// ---------- car health score ----------
+function setTxt(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; }
+function computeHealth(since,interval){
+  var over=since-interval, score, status, tone;
+  if(over<=0){
+    var r=since/interval;
+    score=Math.round(100-14*r);
+    if(r<0.8){status="Healthy";tone="ok";}else{status="Due soon";tone="warn";}
+  }else{
+    score=Math.round(86-over/60);
+    if(over>1500){status="Service now";tone="bad";}else{status="Overdue";tone="warn";}
+  }
+  score=Math.max(12,Math.min(100,score));
+  var fuelHit=over<=0?0:Math.min(2.0,over/2500*2);
+  return {score:score,status:status,tone:tone,over:over,fuelHit:fuelHit};
+}
+function renderHealth(){
+  var since=(state.miles!=null)?state.miles:car.since;
+  var h=computeHealth(since,car.interval);
+  var col=h.tone==="ok"?"#3EBE74":(h.tone==="warn"?"#E0A53A":"#E5484D");
+  var ring=document.getElementById("hs-ring");
+  if(ring){ var C=2*Math.PI*52; ring.style.strokeDasharray=C; ring.style.strokeDashoffset=C*(1-h.score/100); ring.style.stroke=col; }
+  setTxt("hs-num",h.score);
+  setTxt("hs-status",h.status);
+  var st=document.getElementById("hs-statuspill"); if(st){ st.style.color=col; st.style.borderColor=col; }
+  var milesLeft=car.interval-since, prompt, fuel;
+  if(h.over<=0){
+    prompt=(milesLeft<=700)?("You are about "+milesLeft+" miles from your next change. Book now to keep the score in the green."):("Your "+car.name+" is running clean. The score stays high while you are inside the oil window.");
+    fuel="Fuel efficiency: on target";
+  }else{
+    prompt="Your oil is about "+h.over+" miles overdue. That trims fuel economy by an estimated "+h.fuelHit.toFixed(1)+"%. A quick change brings the score back to 100.";
+    var perMo=(h.fuelHit/100)*1100*0.132;
+    fuel="Est. fuel hit: "+h.fuelHit.toFixed(1)+"% · about $"+perMo.toFixed(2)+"/mo in wasted gas";
+  }
+  setTxt("hs-prompt",prompt);
+  setTxt("hs-fuel",fuel);
+}
+function drive(){ var since=((state.miles!=null)?state.miles:car.since)+500; state.miles=since; save(state); renderHealth(); closeSheet(); var h=computeHealth(since,car.interval); toast(h.over>0?("Drove 500 miles · oil now "+h.over+" mi overdue"):"Drove 500 miles · oil window closing"); }
+function restoreOil(){ state.miles=0; save(state); renderHealth(); closeSheet(); toast("Oil changed · health score restored to 100"); }
+
 // ---------- init ----------
-renderCar(); renderCard(); renderSecure(); route();
+renderCar(); renderCard(); renderSecure(); renderHealth(); route();
 if(state.saved){ go("account"); } else { go("tap"); }
 showClip();
 </script>
