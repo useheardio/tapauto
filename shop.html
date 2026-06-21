@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --bg:#F4F2EC;--bg-elev:#FBFAF6;--bg-tint:#ECE9E1;--surface:#FFFFFF;--surface-2:#F8F6F1;
@@ -187,7 +188,7 @@ input{font-family:inherit}
       <p class="sub">Your customers' data is behind this door. Let's make sure it's you.</p>
       <div class="field"><label>Work email</label><input id="li-email" type="email" placeholder="jordan@sirwalterlube.com" autocomplete="username" /></div>
       <div class="field"><label>Password</label><input id="li-pass" type="password" placeholder="••••••••" autocomplete="current-password" /></div>
-      <button class="cta" style="margin-top:20px" onclick="toTwoFA()">Continue</button>
+      <button class="cta" style="margin-top:20px" onclick="doLogin(this)">Continue</button>
       <div class="lock-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Encrypted · two-factor required</div>
     </div>
 
@@ -379,15 +380,46 @@ function scorePill(s){return s>=80?"good":(s>=55?"due":"over");}
 
 /* ---------- auth ---------- */
 function lstep(s){ el("ls-creds").classList.toggle("on",s==="creds"); el("ls-2fa").classList.toggle("on",s==="2fa"); }
-function toTwoFA(){ lstep("2fa"); }
-function signIn(){
-  var days=el("rememberTog").classList.contains("on")?30:0.5;
-  try{ localStorage.setItem(AUTH_KEY,JSON.stringify({exp:Date.now()+days*864e5})); }catch(e){}
+function toTwoFA(){ lstep("2fa"); } // legacy 2FA screen; real TOTP MFA is the next layer
+var supaClient=null;
+async function initSupa(){
+  if(supaClient) return supaClient;
+  try{ var c=await (await fetch("/api/config")).json(); if(c.url&&c.anonKey&&window.supabase){ supaClient=window.supabase.createClient(c.url,c.anonKey); } }catch(e){}
+  return supaClient;
+}
+async function doLogin(btn){
+  var email=el("li-email").value.trim(), pass=el("li-pass").value;
+  if(!email||!pass){ toast("Enter your email and password"); return; }
+  await initSupa();
+  if(!supaClient){ toast("Auth not configured yet"); return; }
+  btn.textContent="Signing in..."; btn.disabled=true;
+  var res=await supaClient.auth.signInWithPassword({ email:email, password:pass });
+  btn.textContent="Continue"; btn.disabled=false;
+  if(res.error){ toast(res.error.message||"Sign in failed"); return; }
   showApp();
 }
-function authed(){ try{ var a=JSON.parse(localStorage.getItem(AUTH_KEY)||"{}"); return a.exp&&a.exp>Date.now(); }catch(e){ return false; } }
-function logout(){ try{ localStorage.removeItem(AUTH_KEY); }catch(e){} el("app").classList.remove("on"); el("login").classList.remove("hidden"); lstep("creds"); }
-function showApp(){ el("login").classList.add("hidden"); el("app").classList.add("on"); renderLive(); renderCustomers(); renderBuckets(); tab("bay"); }
+function signIn(){ showApp(); } // legacy hook for the 2FA screen
+function logout(){ if(supaClient){ supaClient.auth.signOut(); } el("app").classList.remove("on"); el("login").classList.remove("hidden"); lstep("creds"); }
+async function showApp(){
+  el("login").classList.add("hidden"); el("app").classList.add("on");
+  renderLive(); renderCustomers(); renderBuckets(); tab("bay");
+  try{
+    var u=(await supaClient.auth.getUser()).data.user;
+    if(u){
+      var st=await supaClient.from("staff").select("shop_id,name,role").eq("user_id",u.id).maybeSingle();
+      if(st.data){
+        window.SHOP_ID=st.data.shop_id;
+        var av=document.querySelector(".who .av");
+        if(av&&st.data.name){ av.textContent=st.data.name.split(" ").map(function(p){return p[0];}).join("").slice(0,2).toUpperCase(); }
+      } else { toast("This account is not linked to a shop yet"); }
+    }
+  }catch(e){}
+}
+async function boot(){
+  await initSupa();
+  if(supaClient){ try{ var s=await supaClient.auth.getSession(); if(s.data&&s.data.session){ showApp(); return; } }catch(e){} }
+  lstep("creds");
+}
 
 /* ---------- tabs ---------- */
 function tab(t){
@@ -512,7 +544,7 @@ function finishLog(){
 }
 
 /* ---------- init ---------- */
-if(authed()){ showApp(); } else { lstep("creds"); }
+boot();
 </script>
 </body>
 </html>
