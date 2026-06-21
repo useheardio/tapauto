@@ -448,8 +448,8 @@ input{font-family:inherit}
       <span class="kicker">Account security</span>
       <h1 class="h">Two-factor authentication</h1>
       <div id="mfa-start">
-        <p class="sub">Add a second layer so a stolen password alone can't open your customers' data. You'll need an authenticator app like Google Authenticator, Authy, or 1Password.</p>
-        <button class="cta" style="margin-top:20px" onclick="enrollMfa(this)">Set up two-factor</button>
+        <p class="sub" id="mfa-start-desc">Add a second layer so a stolen password alone can't open your customers' data. You'll need an authenticator app like Google Authenticator, Authy, or 1Password.</p>
+        <button class="cta" id="mfa-start-btn" style="margin-top:20px" onclick="enrollMfa(this)">Set up two-factor</button>
       </div>
       <div id="mfa-qr-step" style="display:none">
         <p class="sub">Scan this with your authenticator app, then enter the 6-digit code it shows.</p>
@@ -570,8 +570,17 @@ async function boot(){
 
 /* ---------- two-factor (TOTP) ---------- */
 var MFA_FACTOR=null, ENROLL_FACTOR=null;
-function openMfa(){ el("mfa-start").style.display=""; el("mfa-qr-step").style.display="none"; el("mfa-done").style.display="none"; el("mfa").classList.add("on"); }
+function openMfa(){ el("mfa-start").style.display=""; el("mfa-qr-step").style.display="none"; el("mfa-done").style.display="none"; el("mfa").classList.add("on"); updateMfaStart(); }
 function closeMfa(){ el("mfa").classList.remove("on"); }
+async function updateMfaStart(){
+  var desc=el("mfa-start-desc"), btn=el("mfa-start-btn"); if(!supaClient) return;
+  try{
+    var f=await supaClient.auth.mfa.listFactors();
+    var on=f&&f.data&&f.data.totp&&f.data.totp.length;
+    if(on){ if(desc) desc.textContent="Two-factor is on. If your authenticator app shows a messy name, reset it here to get a clean Tap Auto entry."; if(btn) btn.textContent="Reset two-factor"; }
+    else { if(desc) desc.textContent="Add a second layer so a stolen password alone can't open your customers' data. You'll need an authenticator app like Google Authenticator, Authy, or 1Password."; if(btn) btn.textContent="Set up two-factor"; }
+  }catch(e){}
+}
 async function refreshMfaStatus(){
   var s=el("mfa-status"); if(!s||!supaClient) return;
   try{
@@ -584,16 +593,16 @@ async function enrollMfa(btn){
   if(!supaClient){ toast("Auth not ready"); return; }
   btn.disabled=true; btn.textContent="Starting...";
   try{
-    // clear any half-finished unverified factor first
-    try{ var ex=await supaClient.auth.mfa.listFactors(); var stale=ex&&ex.data&&ex.data.all?ex.data.all.filter(function(x){return x.status!=="verified";}):[]; for(var i=0;i<stale.length;i++){ await supaClient.auth.mfa.unenroll({factorId:stale[i].id}); } }catch(e){}
-    var en=await supaClient.auth.mfa.enroll({factorType:"totp"});
+    // remove any existing factor so re-running cleanly replaces it (and clears the messy old label)
+    try{ var ex=await supaClient.auth.mfa.listFactors(); var all=ex&&ex.data&&ex.data.all?ex.data.all:[]; for(var i=0;i<all.length;i++){ await supaClient.auth.mfa.unenroll({factorId:all[i].id}); } }catch(e){}
+    var en=await supaClient.auth.mfa.enroll({factorType:"totp", issuer:"Tap Auto", friendlyName:"Tap Auto "+Date.now()});
     if(en.error) throw en.error;
     ENROLL_FACTOR=en.data.id;
     el("mfa-qr").src=en.data.totp.qr_code;
     el("mfa-secret").textContent=en.data.totp.secret;
     el("mfa-start").style.display="none"; el("mfa-qr-step").style.display="";
   }catch(err){ toast((err&&err.message)||"Could not start setup"); }
-  btn.disabled=false; btn.textContent="Set up two-factor";
+  btn.disabled=false; updateMfaStart();
 }
 async function confirmMfa(btn){
   var code=(el("mfa-enroll-code").value||"").replace(/\D/g,"");
