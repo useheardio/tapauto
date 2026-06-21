@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1" />
+<title>Tap Auto for Shops</title>
+<meta name="theme-color" content="#F4F2EC" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#F4F2EC;--bg-elev:#FBFAF6;--bg-tint:#ECE9E1;--surface:#FFFFFF;--surface-2:#F8F6F1;
+  --line:rgba(28,25,21,.10);--line-strong:rgba(28,25,21,.18);
+  --text:#1B1A18;--muted:#6A675F;--muted-2:#9A968C;
+  --accent:#E0571E;--accent-soft:#F06A30;--accent-deep:#B8420F;--accent-tint:rgba(224,87,30,.09);
+  --ink:#131316;--on-ink:#F4F1EA;
+  --ok:#3E8E5E;--ok-tint:rgba(62,142,94,.12);
+  --ease:cubic-bezier(.22,1,.36,1);
+  --shadow:0 1px 2px rgba(24,20,15,.04),0 14px 34px -18px rgba(24,20,15,.18);
+  --shadow-lg:0 2px 6px rgba(24,20,15,.05),0 40px 70px -28px rgba(24,20,15,.24);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:"Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.45}
+h1,h2,h3{font-family:"Sora",sans-serif;letter-spacing:-.025em;line-height:1.08}
+.mono{font-family:"Space Mono",monospace}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+.wrap{max-width:500px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:max(16px,env(safe-area-inset-top)) 20px 14px}
+.brand{display:flex;align-items:center;gap:10px;font-family:"Sora";font-weight:700;font-size:1rem}
+.brand .mk{width:30px;height:30px;border-radius:9px;background:var(--accent);display:grid;place-items:center}
+.brand .mk svg{width:17px;height:17px}
+.brand .sub{font-size:.7rem;color:var(--muted);font-weight:500;font-family:"Inter"}
+.nfcchip{display:inline-flex;align-items:center;gap:6px;font-family:"Space Mono",monospace;font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:20px;border:1px solid var(--line)}
+.nfcchip .dot{width:7px;height:7px;border-radius:50%}
+.nfcchip.ok{color:var(--ok);border-color:rgba(62,142,94,.3)}.nfcchip.ok .dot{background:var(--ok)}
+.nfcchip.sim{color:var(--muted);}.nfcchip.sim .dot{background:var(--muted-2)}
+
+.screens{flex:1;position:relative}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;padding:6px 20px calc(24px + env(safe-area-inset-bottom));overflow-y:auto;opacity:0;transform:translateY(12px);pointer-events:none;transition:.4s var(--ease)}
+.screen.on{opacity:1;transform:none;pointer-events:auto}
+.spacer{flex:1;min-height:10px}
+.back{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:.86rem;font-weight:600;margin-bottom:6px;align-self:flex-start}
+.kicker{font-family:"Space Mono",monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.h{font-size:1.9rem;margin:10px 0 6px;font-weight:800}
+.sub{color:var(--muted);font-size:.96rem}
+
+/* home action cards */
+.action{display:flex;align-items:center;gap:16px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:var(--shadow);transition:.25s var(--ease);margin-bottom:14px}
+.action:active{transform:scale(.985)}
+.action .ic{width:54px;height:54px;border-radius:15px;background:var(--accent-tint);color:var(--accent);display:grid;place-items:center;flex:0 0 auto}
+.action .ic svg{width:27px;height:27px}
+.action .t{font-family:"Sora";font-weight:700;font-size:1.12rem}
+.action .d{color:var(--muted);font-size:.85rem;margin-top:2px}
+.action .go{margin-left:auto;color:var(--muted-2)}
+.recent{margin-top:18px}
+.recent .lbl{font-family:"Space Mono",monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2);margin-bottom:10px}
+.rrow{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:.88rem}
+.rrow:last-child{border-bottom:none}
+.rrow .tm{font-family:"Space Mono",monospace;font-size:.7rem;color:var(--muted-2)}
+
+/* scanner */
+.scanner{position:relative;width:240px;height:240px;margin:18px auto;display:grid;place-items:center}
+.scanner .ring{position:absolute;inset:0;border-radius:50%;border:2px solid var(--accent);opacity:0;animation:pulse 2.4s var(--ease) infinite}
+.scanner .ring:nth-child(2){animation-delay:.8s}
+.scanner .ring:nth-child(3){animation-delay:1.6s}
+@keyframes pulse{0%{opacity:.5;transform:scale(.45)}100%{opacity:0;transform:scale(1)}}
+.scanner .core{width:118px;height:118px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#fff,var(--surface-2));border:1px solid var(--line);display:grid;place-items:center;color:var(--accent);box-shadow:var(--shadow-lg);z-index:2}
+.scanner .core svg{width:54px;height:54px}
+.scanner.found .ring{animation:none;opacity:0}
+.scanner.found .core{color:var(--ok);background:radial-gradient(circle at 50% 35%,#fff,#eef7f1);border-color:rgba(62,142,94,.4)}
+.scan-status{text-align:center;font-family:"Sora";font-weight:600;font-size:1.05rem;margin-top:4px}
+.scan-hint{text-align:center;color:var(--muted);font-size:.9rem;margin-top:6px}
+
+/* fields */
+.field{margin-top:16px}
+.field label{display:block;font-family:"Space Mono",monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-bottom:8px}
+.field input{width:100%;background:var(--surface);border:1px solid var(--line-strong);border-radius:15px;color:var(--text);padding:16px 18px;font-family:"Inter";font-size:1.1rem;outline:none;transition:.2s;box-shadow:var(--shadow)}
+.field input:focus{border-color:var(--accent)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:8px}
+.chip{padding:11px 16px;border-radius:100px;border:1px solid var(--line-strong);background:var(--surface);font-weight:600;font-size:.9rem;transition:.2s}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* mileage numpad */
+.odo{text-align:center;margin:10px 0 6px}
+.odo .car{font-family:"Sora";font-weight:700;font-size:1.05rem}
+.odo .num{font-family:"Sora";font-weight:800;font-size:3.4rem;letter-spacing:-.03em;margin-top:6px;min-height:60px}
+.odo .num .u{font-size:1.2rem;color:var(--muted);font-weight:600;margin-left:6px}
+.odo .num.empty{color:var(--muted-2)}
+.hsprev{display:inline-flex;align-items:center;gap:8px;background:var(--ok-tint);color:var(--ok);border-radius:100px;padding:7px 14px;font-size:.82rem;font-weight:600;margin-top:6px}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:14px}
+.key{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 0;font-family:"Sora";font-weight:700;font-size:1.5rem;box-shadow:var(--shadow);transition:.12s}
+.key:active{background:var(--bg-tint);transform:scale(.96)}
+.key.fn{font-size:1.1rem;color:var(--muted)}
+
+/* big button */
+.cta{margin-top:18px;background:var(--accent);color:#fff;text-align:center;font-family:"Sora";font-weight:700;font-size:1.06rem;padding:18px;border-radius:18px;width:100%;box-shadow:0 14px 30px -14px var(--accent-glow,rgba(224,87,30,.5));transition:.2s var(--ease)}
+.cta:active{transform:scale(.985)}
+.cta:disabled{opacity:.4;pointer-events:none}
+.cta.ghost{background:transparent;color:var(--text);border:1px solid var(--line-strong);box-shadow:none}
+
+/* done */
+.bigcheck{width:96px;height:96px;border-radius:50%;background:var(--ok);display:grid;place-items:center;color:#fff;margin:0 auto 14px;box-shadow:0 20px 40px -16px rgba(62,142,94,.6)}
+.summary{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:6px 18px;box-shadow:var(--shadow);margin-top:18px}
+.srow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);font-size:.92rem}
+.srow:last-child{border-bottom:none}
+.srow .k{color:var(--muted)}
+.srow .v{font-weight:600;text-align:right}
+.srow .v.url{font-family:"Space Mono",monospace;font-size:.72rem;color:var(--accent);word-break:break-all}
+.center{text-align:center}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:13px 20px;border-radius:100px;font-size:.86rem;z-index:90;opacity:0;transition:.4s var(--ease);box-shadow:var(--shadow-lg);max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <span class="mk"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a13 13 0 0 1 0 12M13 4a18 18 0 0 1 0 16" stroke="#fff" stroke-width="2"/></svg></span>
+      <div>Tap Auto <span style="color:var(--muted-2);font-weight:500">for Shops</span><div class="sub">Sir Walter Quick Lube</div></div>
+    </div>
+    <span class="nfcchip" id="nfcchip"><span class="dot"></span><span id="nfctxt">checking</span></span>
+  </div>
+
+  <div class="screens">
+
+    <!-- HOME -->
+    <div class="screen on" data-screen="home">
+      <span class="kicker">Bay tools</span>
+      <h1 class="h">What are we doing?</h1>
+      <p class="sub" style="margin-bottom:22px">Pick a job. Each one takes a few seconds.</p>
+      <button class="action" onclick="startFlow('new')">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg></span>
+        <span><span class="t">Assign a new tag</span><span class="d">First time this car gets a tag</span></span>
+        <span class="go"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span>
+      </button>
+      <button class="action" onclick="startFlow('log')">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 4v4h4"/></svg></span>
+        <span><span class="t">Log a service</span><span class="d">Returning car, update the mileage</span></span>
+        <span class="go"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span>
+      </button>
+      <div class="recent">
+        <div class="lbl">Today</div>
+        <div class="rrow"><span>Dana W. · 2019 F-150 · 61,540 mi</span><span class="tm">9:28a</span></div>
+        <div class="rrow"><span>Marcus R. · 2021 RAV4 · 42,180 mi</span><span class="tm">9:41a</span></div>
+      </div>
+    </div>
+
+    <!-- SCAN -->
+    <div class="screen" data-screen="scan">
+      <button class="back" onclick="go('home')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>Cancel</button>
+      <div class="spacer"></div>
+      <h1 class="h center" id="scan-title">Hold the tag to your phone</h1>
+      <div class="scanner" id="scanner">
+        <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+        <span class="core" id="scancore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a13 13 0 0 1 0 12M13 4a18 18 0 0 1 0 16"/></svg></span>
+      </div>
+      <div class="scan-status" id="scan-status">Searching for a tag</div>
+      <div class="scan-hint" id="scan-hint">Touch the tag to the back of your phone, near the top.</div>
+      <div class="spacer"></div>
+      <button class="cta ghost" onclick="simulateScan()" id="scan-sim">Simulate a tag (no NFC here)</button>
+    </div>
+
+    <!-- DETAILS (new flow) -->
+    <div class="screen" data-screen="details">
+      <button class="back" onclick="go('scan')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>Back</button>
+      <span class="kicker">Tag <span id="det-tag" class="mono">read</span></span>
+      <h1 class="h">Whose car is this?</h1>
+      <div class="field"><label>Plate or VIN</label><input id="in-plate" type="text" placeholder="KRT-4471" autocomplete="off" /></div>
+      <div class="two">
+        <div class="field"><label>Customer</label><input id="in-name" type="text" placeholder="Marcus" autocomplete="off" /></div>
+        <div class="field"><label>Mobile</label><input id="in-phone" type="tel" placeholder="(919) 555 0142" autocomplete="off" /></div>
+      </div>
+      <div class="field"><label>Oil type</label><div class="chips" id="oilchips"></div></div>
+      <div class="field"><label>Service</label><div class="chips" id="svcchips"></div></div>
+      <div class="spacer"></div>
+      <button class="cta" onclick="toMileage()">Continue to mileage</button>
+    </div>
+
+    <!-- MILEAGE -->
+    <div class="screen" data-screen="mileage">
+      <button class="back" onclick="goBackFromMileage()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>Back</button>
+      <div class="odo">
+        <div class="car" id="odo-car">2021 Toyota RAV4</div>
+        <div class="num empty" id="odo-num">0<span class="u">mi</span></div>
+        <div class="hsprev" id="hsprev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>Health score resets to 100</div>
+      </div>
+      <div class="pad">
+        <button class="key" onclick="pad('1')">1</button><button class="key" onclick="pad('2')">2</button><button class="key" onclick="pad('3')">3</button>
+        <button class="key" onclick="pad('4')">4</button><button class="key" onclick="pad('5')">5</button><button class="key" onclick="pad('6')">6</button>
+        <button class="key" onclick="pad('7')">7</button><button class="key" onclick="pad('8')">8</button><button class="key" onclick="pad('9')">9</button>
+        <button class="key fn" onclick="padClear()">Clear</button><button class="key" onclick="pad('0')">0</button><button class="key fn" onclick="padDel()">⌫</button>
+      </div>
+      <button class="cta" id="mileage-cta" onclick="afterMileage()">Save odometer</button>
+    </div>
+
+    <!-- WRITE (new flow) -->
+    <div class="screen" data-screen="write">
+      <button class="back" onclick="go('mileage')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>Back</button>
+      <div class="spacer"></div>
+      <h1 class="h center">Write it to the tag</h1>
+      <div class="scanner" id="scanner2">
+        <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+        <span class="core" id="writecore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span>
+      </div>
+      <div class="scan-status" id="write-status">Hold the same tag to your phone</div>
+      <div class="scan-hint">This binds the tag to the car. It only takes one tap.</div>
+      <div class="spacer"></div>
+      <button class="cta ghost" onclick="simulateWrite()" id="write-sim">Simulate write (no NFC here)</button>
+    </div>
+
+    <!-- DONE -->
+    <div class="screen" data-screen="done">
+      <div class="spacer"></div>
+      <div class="bigcheck"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+      <h1 class="h center" id="done-title">Tag assigned</h1>
+      <p class="sub center" id="done-sub">Stick it in the windshield corner. This car is now tappable.</p>
+      <div class="summary" id="done-summary"></div>
+      <div class="spacer"></div>
+      <button class="cta" onclick="startFlow(mode)" id="done-again">Assign another</button>
+      <button class="cta ghost" onclick="go('home')" style="margin-top:10px">Finish</button>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+var nfcOK=("NDEFReader" in window);
+var DEMO_URL="https://tapauto-black.vercel.app/demo.html";
+var OILS=["0W-20 Syn","5W-30 Syn","5W-20 Syn","High mileage","Conventional"];
+var SVCS=["Oil change","+ Tire rotation","+ Air filter","+ Wipers"];
+var INTERVAL=5000;
+var mode="new";
+var cap={tag:"",plate:"",name:"",phone:"",oil:"0W-20 Syn",svc:"Oil change",miles:""};
+var ndef=null;
+
+// nfc status chip
+(function(){
+  var chip=document.getElementById("nfcchip"),txt=document.getElementById("nfctxt");
+  if(nfcOK){ chip.className="nfcchip ok"; txt.textContent="NFC ready"; }
+  else { chip.className="nfcchip sim"; txt.textContent="Simulation"; }
+})();
+
+function go(s){
+  document.querySelectorAll(".screen").forEach(function(el){ el.classList.toggle("on",el.dataset.screen===s); });
+  var sc=document.querySelector(".screen[data-screen='"+s+"']"); if(sc) sc.scrollTop=0;
+}
+function toast(m){ var t=document.getElementById("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(function(){t.classList.remove("show");},2600); }
+
+function buildChips(){
+  var oc=document.getElementById("oilchips"); oc.innerHTML="";
+  OILS.forEach(function(o){ var b=document.createElement("button"); b.className="chip"+(o===cap.oil?" on":""); b.textContent=o; b.onclick=function(){ cap.oil=o; buildChips(); }; oc.appendChild(b); });
+  var sc=document.getElementById("svcchips"); sc.innerHTML="";
+  SVCS.forEach(function(s){ var b=document.createElement("button"); b.className="chip"+(s===cap.svc?" on":""); b.textContent=s; b.onclick=function(){ cap.svc=s; buildChips(); }; sc.appendChild(b); });
+}
+
+function startFlow(m){
+  mode=m;
+  cap={tag:"",plate:"",name:"",phone:"",oil:"0W-20 Syn",svc:"Oil change",miles:""};
+  document.getElementById("scan-title").textContent=(m==="new")?"Hold the new tag to your phone":"Tap the car's tag";
+  go("scan");
+  resetScanner();
+  beginScan();
+}
+
+// ---------- scanner ----------
+function resetScanner(){
+  document.getElementById("scanner").classList.remove("found");
+  document.getElementById("scan-status").textContent="Searching for a tag";
+  document.getElementById("scan-hint").style.display="";
+}
+async function beginScan(){
+  if(!nfcOK) return; // simulate button shown
+  try{
+    ndef=new NDEFReader();
+    await ndef.scan();
+    ndef.onreading=function(e){ onTagRead(e.serialNumber||("tag-"+Date.now())); };
+    ndef.onreadingerror=function(){ document.getElementById("scan-status").textContent="Could not read, try again"; };
+  }catch(err){
+    document.getElementById("scan-status").textContent="Tap to allow NFC, then scan";
+    document.getElementById("scan-hint").textContent="Your browser needs permission to use NFC.";
+  }
+}
+function simulateScan(){ onTagRead("04:A2:39:"+Math.floor(Math.random()*900+100)); }
+function onTagRead(serial){
+  cap.tag=serial;
+  var sc=document.getElementById("scanner"); sc.classList.add("found");
+  document.getElementById("scancore").innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>';
+  document.getElementById("scan-status").textContent="Tag found";
+  document.getElementById("scan-hint").style.display="none";
+  setTimeout(function(){
+    document.getElementById("scancore").innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a13 13 0 0 1 0 12M13 4a18 18 0 0 1 0 16"/></svg>';
+    if(mode==="new"){ document.getElementById("det-tag").textContent=cap.tag; buildChips(); go("details"); }
+    else { // returning car known from tag
+      cap.plate="KRT-4471"; cap.name="Marcus"; cap.phone="(919) 555 0142"; cap.oil="0W-20 Syn"; cap.svc="Oil change";
+      document.getElementById("odo-car").textContent="2021 Toyota RAV4 · Marcus";
+      cap.miles=""; renderOdo(); go("mileage");
+    }
+  },760);
+}
+
+// ---------- details ----------
+function toMileage(){
+  cap.plate=document.getElementById("in-plate").value.trim()||"KRT-4471";
+  cap.name=document.getElementById("in-name").value.trim()||"Marcus";
+  cap.phone=document.getElementById("in-phone").value.trim()||"(919) 555 0142";
+  document.getElementById("odo-car").textContent="Plate "+cap.plate+" · "+cap.name;
+  cap.miles=""; renderOdo(); go("mileage");
+}
+function goBackFromMileage(){ go(mode==="new"?"details":"scan"); }
+
+// ---------- mileage numpad ----------
+function pad(d){ if(cap.miles.length<7){ cap.miles+=d; renderOdo(); } }
+function padDel(){ cap.miles=cap.miles.slice(0,-1); renderOdo(); }
+function padClear(){ cap.miles=""; renderOdo(); }
+function renderOdo(){
+  var el=document.getElementById("odo-num");
+  if(!cap.miles){ el.className="num empty"; el.innerHTML='0<span class="u">mi</span>'; }
+  else { el.className="num"; el.innerHTML=Number(cap.miles).toLocaleString()+'<span class="u">mi</span>'; }
+  document.getElementById("mileage-cta").textContent=(mode==="new")?"Save and write tag":"Log this service";
+}
+function afterMileage(){
+  if(!cap.miles){ toast("Enter the odometer reading"); return; }
+  if(mode==="new"){ go("write"); resetWriter(); beginWrite(); }
+  else { finishLog(); }
+}
+
+// ---------- write ----------
+function resetWriter(){ document.getElementById("scanner2").classList.remove("found"); document.getElementById("write-status").textContent="Hold the same tag to your phone"; }
+async function beginWrite(){
+  if(!nfcOK) return;
+  try{
+    var w=new NDEFReader();
+    var url=DEMO_URL+"?car=rav4&t="+encodeURIComponent(cap.tag);
+    await w.write({records:[{recordType:"url",data:url}]});
+    onWritten();
+  }catch(err){ document.getElementById("write-status").textContent="Write failed, hold the tag steady and retry"; }
+}
+function simulateWrite(){ onWritten(); }
+function onWritten(){
+  var sc=document.getElementById("scanner2"); sc.classList.add("found");
+  document.getElementById("writecore").innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>';
+  document.getElementById("write-status").textContent="Tag written";
+  setTimeout(finishNew,720);
+}
+
+// ---------- done ----------
+function carName(){ return mode==="new" ? ("Plate "+cap.plate) : "2021 Toyota RAV4"; }
+function finishNew(){
+  document.getElementById("done-title").textContent="Tag assigned";
+  document.getElementById("done-sub").textContent="Stick it in the windshield corner. This car is now tappable.";
+  var url=DEMO_URL+"?car=rav4&t="+cap.tag;
+  document.getElementById("done-summary").innerHTML=
+    srow("Customer",cap.name)+srow("Vehicle",cap.plate)+srow("Odometer",Number(cap.miles).toLocaleString()+" mi")+
+    srow("Service",cap.oil+" · "+cap.svc)+srow("Health score","100 / 100")+srowUrl("Tag opens",url);
+  document.getElementById("done-again").textContent="Assign another";
+  go("done"); toast("Tag assigned · "+cap.name);
+}
+function finishLog(){
+  document.getElementById("done-title").textContent="Service logged";
+  document.getElementById("done-sub").textContent="Marcus gets a receipt, and his health score is back to 100.";
+  document.getElementById("done-summary").innerHTML=
+    srow("Customer","Marcus Reyes")+srow("Vehicle","2021 Toyota RAV4")+srow("New odometer",Number(cap.miles).toLocaleString()+" mi")+
+    srow("Service",cap.oil+" · "+cap.svc)+srow("Health score","100 / 100")+srow("Next due",(Number(cap.miles)+INTERVAL).toLocaleString()+" mi");
+  document.getElementById("done-again").textContent="Log another";
+  go("done"); toast("Service logged · health restored");
+}
+function srow(k,v){ return '<div class="srow"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>'; }
+function srowUrl(k,v){ return '<div class="srow"><span class="k">'+k+'</span><span class="v url">'+v+'</span></div>'; }
+</script>
+</body>
+</html>
